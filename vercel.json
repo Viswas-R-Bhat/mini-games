@@ -1,0 +1,8 @@
+{
+  "outputDirectory": ".",
+  "buildCommand": "",
+  "rewrites": [
+    { "source": "/typing",    "destination": "/pages/typing.html" },
+    { "source": "/crossword", "destination": "/pages/crossword.html" }
+  ]
+}

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crossword — MiniGames</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #080b14;
+      --surface:   #0f1623;
+      --surface2:  #141d2e;
+      --border:    #1e2d45;
+      --border2:   #2a3f5f;
+      --primary:   #4fffb0;
+      --primary-d: #1fd98a;
+      --warn:      #ff6b35;
+      --text:      #e8eaf0;
+      --muted:     #6b7fa3;
+      --faint:     #1a2438;
+
+      --ff-display: 'Bebas Neue', sans-serif;
+      --ff-mono:    'JetBrains Mono', monospace;
+      --ff-body:    'Plus Jakarta Sans', sans-serif;
+
+      /* crossword cell colours */
+      --cell-bg:        #141d2e;
+      --cell-border:    #2a3f5f;
+      --cell-highlight: rgba(79,255,176,0.12);
+      --cell-active:    rgba(79,255,176,0.28);
+      --cell-correct:   rgba(79,255,176,0.22);
+      --cell-wrong:     rgba(255,71,87,0.22);
+      --cell-black:     #060910;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--ff-body);
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(79,255,176,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,255,176,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    /* ── Layout ────────────────────────────────────────────────────────────── */
+    .page {
+      position: relative; z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 5rem;
+    }
+
+    /* ── Header ────────────────────────────────────────────────────────────── */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-bottom: 1rem; margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .back-link {
+      font-family: var(--ff-mono); font-size: 0.72rem; letter-spacing: 0.1em;
+      color: var(--muted); text-decoration: none; transition: color 0.2s;
+    }
+    .back-link::before { content: '← '; }
+    .back-link:hover { color: var(--primary); }
+    .site-tag { font-family: var(--ff-mono); font-size: 0.65rem; letter-spacing: 0.15em; color: var(--faint); }
+
+    /* ── Hero ──────────────────────────────────────────────────────────────── */
+    .hero { margin-bottom: 1.75rem; }
+    .hero-eyebrow {
+      font-family: var(--ff-mono); font-size: 0.7rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--primary); margin-bottom: 0.3rem;
+    }
+    h1 {
+      font-family: var(--ff-display);
+      font-size: clamp(2.8rem, 7vw, 4.5rem);
+      letter-spacing: 0.04em; line-height: 0.95;
+      margin-bottom: 0.4rem;
+    }
+    h1 span { color: var(--primary); }
+    .hero-sub { font-size: 0.85rem; color: var(--muted); line-height: 1.6; max-width: 420px; }
+
+    /* ── HUD bar ───────────────────────────────────────────────────────────── */
+    .hud {
+      display: flex; align-items: center; gap: 1.5rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.9rem 1.5rem; margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .hud-timer {
+      font-family: var(--ff-display); font-size: 2.8rem;
+      letter-spacing: 0.04em; color: var(--primary); line-height: 1;
+    }
+    .hud-divider { width: 1px; align-self: stretch; background: var(--border); }
+    .hud-label {
+      font-family: var(--ff-mono); font-size: 0.62rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .btn {
+      font-family: var(--ff-display); font-size: 1rem; letter-spacing: 0.1em;
+      border: none; border-radius: 7px; padding: 0.55rem 1.2rem;
+      cursor: pointer; transition: opacity 0.15s, transform 0.15s;
+    }
+    .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-primary { background: var(--primary); color: var(--bg); }
+    .btn-outline {
+      background: transparent; border: 1.5px solid var(--border2);
+      color: var(--text);
+    }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .hud-hint {
+      margin-left: auto; font-family: var(--ff-mono); font-size: 0.65rem;
+      letter-spacing: 0.08em; color: var(--muted); display: flex;
+      align-items: center; gap: 0.4rem;
+    }
+    .hud-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--primary);
+      animation: breathe 1.8s ease infinite;
+    }
+    @keyframes breathe {
+      0%,100% { opacity: 0.3; transform: scale(0.8); }
+      50%      { opacity: 1;   transform: scale(1.2); }
+    }
+
+    /* ── Main two-column layout: grid left, clues right ───────────────────── */
+    .game-layout {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* ── Crossword grid ────────────────────────────────────────────────────── */
+    .grid-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      display: inline-block;
+    }
+
+    #crossword-grid {
+      display: grid;
+      gap: 2px;
+    }
+
+    /* Each cell is a square */
+    .xw-cell {
+      width:  46px;
+      height: 46px;
+      position: relative;
+      background: var(--cell-bg);
+      border: 1px solid var(--cell-border);
+      border-radius: 2px;
+      transition: background 0.15s;
+    }
+
+    .xw-black {
+      background: var(--cell-black);
+      border-color: var(--cell-black);
+    }
+
+    .xw-highlight { background: var(--cell-highlight); }
+    .xw-active-cell { background: var(--cell-active) !important; }
+
+    .cell-correct { background: var(--cell-correct) !important; }
+    .cell-wrong   { background: var(--cell-wrong)   !important; }
+
+    /* Clue number label */
+    .xw-num {
+      position: absolute; top: 2px; left: 3px;
+      font-family: var(--ff-mono); font-size: 0.55rem;
+      line-height: 1; color: var(--muted); pointer-events: none;
+      font-weight: 700; z-index: 1;
+    }
+
+    /* Letter input inside the cell */
+    .xw-input {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      background: transparent; border: none; outline: none;
+      text-align: center;
+      font-family: var(--ff-mono); font-size: 1.1rem; font-weight: 700;
+      color: var(--text);
+      text-transform: uppercase;
+      caret-color: transparent;
+      cursor: pointer;
+      padding-top: 8px; /* push below number label */
+    }
+    .xw-input:disabled { opacity: 0.8; cursor: default; }
+
+    /* ── Clue panels ────────────────────────────────────────────────────────── */
+    .clues-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .clue-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      max-height: 280px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .clue-panel-head {
+      font-family: var(--ff-display);
+      font-size: 1rem; letter-spacing: 0.1em;
+      color: var(--primary);
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      flex-shrink: 0;
+    }
+
+    .clue-list {
+      list-style: none;
+      overflow-y: auto;
+      flex: 1;
+      padding: 0.25rem 0;
+    }
+    .clue-list::-webkit-scrollbar { width: 4px; }
+    .clue-list::-webkit-scrollbar-track { background: transparent; }
+    .clue-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    .clue-item {
+      display: flex; align-items: baseline; gap: 0.6rem;
+      padding: 0.45rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(30,45,69,0.5);
+      transition: background 0.1s;
+    }
+    .clue-item:last-child { border-bottom: none; }
+    .clue-item:hover { background: var(--surface2); }
+    .clue-item.clue-active {
+      background: rgba(79,255,176,0.08);
+      border-left: 2px solid var(--primary);
+    }
+
+    .clue-num {
+      font-family: var(--ff-mono); font-size: 0.7rem; font-weight: 700;
+      color: var(--primary); min-width: 22px; flex-shrink: 0;
+    }
+    .clue-text {
+      font-size: 0.8rem; color: var(--muted); line-height: 1.4;
+    }
+    .clue-item.clue-active .clue-text { color: var(--text); }
+
+    /* ── Results ────────────────────────────────────────────────────────────── */
+    #results-section {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 2rem; margin-top: 1.5rem;
+      animation: slideUp 0.4s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .res-title {
+      font-family: var(--ff-display); font-size: 1.6rem; letter-spacing: 0.06em;
+      color: var(--primary); margin-bottom: 1.5rem;
+    }
+    .res-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr));
+      gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .res-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem; text-align: center;
+    }
+    .res-val {
+      font-family: var(--ff-display); font-size: 2.2rem;
+      letter-spacing: 0.04em; color: var(--text);
+    }
+    .res-val.hi { color: var(--primary); }
+    .res-label {
+      font-family: var(--ff-mono); font-size: 0.6rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--muted); margin-top: 0.2rem;
+    }
+    .res-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+    /* ── Leaderboard ────────────────────────────────────────────────────────── */
+    #lb-section {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; margin-top: 1.5rem;
+      animation: slideUp 0.4s ease;
+    }
+    .lb-header {
+      padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.75rem;
+      background: var(--surface2);
+    }
+    .lb-header-title {
+      font-family: var(--ff-display); font-size: 1.3rem; letter-spacing: 0.06em;
+    }
+    .lb-badge {
+      font-family: var(--ff-mono); font-size: 0.6rem; letter-spacing: 0.12em;
+      text-transform: uppercase; background: rgba(79,255,176,0.1);
+      color: var(--primary); border: 1px solid rgba(79,255,176,0.25);
+      padding: 0.18rem 0.5rem; border-radius: 4px;
+    }
+    #lb-loading {
+      padding: 1.5rem; text-align: center;
+      font-family: var(--ff-mono); font-size: 0.78rem; color: var(--muted);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      font-family: var(--ff-mono); font-size: 0.6rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--muted); text-align: left;
+      padding: 0.65rem 1.5rem; border-bottom: 1px solid var(--border);
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover      { background: var(--surface2); }
+    tbody tr.lb-mine    { background: rgba(79,255,176,0.06); }
+    tbody td { padding: 0.7rem 1.5rem; font-size: 0.85rem; }
+    .lb-rank { font-family: var(--ff-mono); font-size: 0.75rem; color: var(--muted); width: 44px; }
+    tbody tr:nth-child(1) .lb-rank { color: #ffd700; font-weight: 700; }
+    tbody tr:nth-child(2) .lb-rank { color: #c0c0c0; font-weight: 700; }
+    tbody tr:nth-child(3) .lb-rank { color: #cd7f32; font-weight: 700; }
+    .lb-usn   { font-family: var(--ff-mono); font-size: 0.75rem; color: var(--muted); }
+    .lb-score {
+      font-family: var(--ff-display); font-size: 1.2rem;
+      letter-spacing: 0.04em; color: var(--primary); text-align: right;
+    }
+
+    /* ── Responsive ─────────────────────────────────────────────────────────── */
+    @media (max-width: 760px) {
+      .game-layout { grid-template-columns: 1fr; }
+      .xw-cell { width: 34px; height: 34px; }
+      .xw-input { font-size: 0.85rem; }
+      .xw-num   { font-size: 0.48rem; }
+      .grid-wrap { padding: 0.6rem; }
+    }
+    @media (max-width: 420px) {
+      .xw-cell { width: 28px; height: 28px; }
+      .xw-input { font-size: 0.72rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <header>
+    <a class="back-link" href="../index.html">Games</a>
+    <span class="site-tag">MiniGames · VarAInce</span>
+  </header>
+
+  <!-- Hero -->
+  <div class="hero">
+    <p class="hero-eyebrow">Game 02 · Score for accuracy</p>
+    <h1>CROSS<span>WORD</span></h1>
+    <p class="hero-sub">Click a clue or a cell to begin. Type your answers, Tab to cycle clues, Backspace to erase.</p>
+  </div>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div id="timer" class="hud-timer">00:00</div>
+    <div class="hud-divider"></div>
+    <span class="hud-label">Score = accuracy × 1000 − time</span>
+    <button id="check-btn" class="btn btn-primary" style="margin-left:auto">Check Answers</button>
+    <div class="hud-hint">
+      <span class="hud-dot"></span>
+      Timer starts on first keypress
+    </div>
+  </div>
+
+  <!-- Game layout: grid + clues -->
+  <div class="game-layout">
+
+    <!-- Grid -->
+    <div class="grid-wrap">
+      <div id="crossword-grid"></div>
+    </div>
+
+    <!-- Clue panels -->
+    <div class="clues-wrap">
+      <div class="clue-panel">
+        <div class="clue-panel-head">ACROSS</div>
+        <ul class="clue-list" id="clues-across"></ul>
+      </div>
+      <div class="clue-panel">
+        <div class="clue-panel-head">DOWN</div>
+        <ul class="clue-list" id="clues-down"></ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Results -->
+  <section id="results-section" hidden>
+    <p class="res-title">RESULTS</p>
+    <div class="res-grid">
+      <div class="res-card">
+        <div class="res-val hi"><span id="res-correct">0</span>/<span id="res-total">0</span></div>
+        <div class="res-label">Letters Correct</div>
+      </div>
+      <div class="res-card">
+        <div id="res-score" class="res-val hi">0</div>
+        <div class="res-label">Final Score</div>
+      </div>
+      <div class="res-card">
+        <div id="res-time" class="res-val">00:00</div>
+        <div class="res-label">Time Taken</div>
+      </div>
+    </div>
+    <div class="res-actions">
+      <button id="view-lb-btn"    class="btn btn-primary">View Leaderboard</button>
+      <button id="play-again-btn" class="btn btn-outline">Play Again</button>
+    </div>
+  </section>
+
+  <!-- Leaderboard -->
+  <section id="lb-section" hidden>
+    <div class="lb-header">
+      <span class="lb-header-title">LEADERBOARD</span>
+      <span class="lb-badge">Crossword</span>
+    </div>
+    <p id="lb-loading" hidden>Fetching scores…</p>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Player</th><th>USN</th><th style="text-align:right">Score</th>
+        </tr>
+      </thead>
+      <tbody id="lb-body"></tbody>
+    </table>
+  </section>
+
+</div>
+
+<script type="module" src="../games/crossword.js"></script>
+</body>
+</html>
