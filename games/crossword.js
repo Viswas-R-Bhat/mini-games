@@ -35,7 +35,9 @@ function buildMaps() {
 
   for (const clue of puzzle.clues.across) {
     for (let i = 0; i < clue.answer.length; i++) {
-      const key = `${clue.row},${clue.col + i}`;
+      const r = clue.row, c = clue.col + i;
+      if (isBlack(r, c)) continue;                        // skip black cells
+      const key = `${r},${c}`;
       solutionMap[key] = clue.answer[i].toUpperCase();
       if (!cellMap[key]) cellMap[key] = { across: null, down: null };
       cellMap[key].across = clue;
@@ -44,7 +46,9 @@ function buildMaps() {
 
   for (const clue of puzzle.clues.down) {
     for (let i = 0; i < clue.answer.length; i++) {
-      const key = `${clue.row + i},${clue.col}`;
+      const r = clue.row + i, c = clue.col;
+      if (isBlack(r, c)) continue;                        // skip black cells
+      const key = `${r},${c}`;
       solutionMap[key] = clue.answer[i].toUpperCase();
       if (!cellMap[key]) cellMap[key] = { across: null, down: null };
       cellMap[key].down = clue;
@@ -247,10 +251,11 @@ function activateClue(clue, dir) {
   document.querySelectorAll('.clue-item').forEach(el =>
     el.classList.remove('clue-active'));
 
-  // Highlight every cell in this clue
+  // Highlight every non-black cell in this clue
   for (let i = 0; i < clue.answer.length; i++) {
     const cr = dir === 'across' ? clue.row       : clue.row + i;
     const cc = dir === 'across' ? clue.col + i   : clue.col;
+    if (isBlack(cr, cc)) continue;                        // skip black cells
     getCellEl(cr, cc)?.classList.add('xw-highlight');
   }
 
@@ -411,6 +416,10 @@ function restartGame() {
 }
 
 // ── Utility ───────────────────────────────────────────────────────────────────
+function isBlack(r, c) {
+  return !puzzle.grid[r] || puzzle.grid[r][c] === '#';
+}
+
 function esc(str) {
   return String(str)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
