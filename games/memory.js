@@ -28,16 +28,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadProgress() {
-  const { supabase } = await import('../lib/supabaseClient.js');
-  const { data } = await supabase.from('attempt_logs').select('meta, score')
-    .eq('team_name', player.team_name).eq('game', 'memory')
-    .order('created_at', { ascending: true });
+  // Try localStorage first as instant fallback
+  const cacheKey = `memory_progress_${player.team_name}`;
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || '{}');
+    if (cached.levelScores) Object.assign(levelScores, cached.levelScores);
+  } catch(e) {}
 
-  (data || []).forEach(r => {
-    if (r.meta?.level) {
-      levelScores[r.meta.level] = Math.max(levelScores[r.meta.level] || 0, r.score);
-    }
-  });
+  // Then fetch from Supabase (source of truth)
+  try {
+    const { supabase } = await import('../lib/supabaseClient.js');
+    const { data } = await supabase.from('attempt_logs').select('meta, score')
+      .eq('team_name', player.team_name).eq('game', 'memory')
+      .order('created_at', { ascending: true });
+
+    (data || []).forEach(r => {
+      if (r.meta?.level) {
+        levelScores[r.meta.level] = Math.max(levelScores[r.meta.level] || 0, r.score);
+      }
+    });
+    // Update cache with latest
+    localStorage.setItem(cacheKey, JSON.stringify({ levelScores: { ...levelScores } }));
+  } catch(e) {
+    console.warn('[memory] Supabase load failed, using cached progress', e);
+  }
 }
 
 function isLevelUnlocked(level) {
@@ -213,6 +227,10 @@ async function endGame() {
 
   // Calculate total score across all levels
   const totalScore = Object.values(levelScores).reduce((a, b) => a + b, 0);
+
+  // Cache progress locally
+  const cacheKey = `memory_progress_${player.team_name}`;
+  localStorage.setItem(cacheKey, JSON.stringify({ levelScores: { ...levelScores } }));
 
   await submitScore({
     usn: player.team_name, game: 'memory', score: totalScore,

@@ -21,16 +21,30 @@ async function init() {
 }
 
 async function loadProgress() {
-  const { supabase } = await import('../lib/supabaseClient.js');
-  const { data } = await supabase.from('attempt_logs').select('meta, score')
-    .eq('team_name', player.team_name).eq('game', 'crossword')
-    .order('created_at', { ascending: true });
+  // Try localStorage first as instant fallback
+  const cacheKey = `crossword_progress_${player.team_name}`;
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || '{}');
+    if (cached.puzzleScores) Object.assign(puzzleScores, cached.puzzleScores);
+  } catch(e) {}
 
-  (data || []).forEach(r => {
-    if (r.meta?.puzzleIdx !== undefined) {
-      puzzleScores[r.meta.puzzleIdx] = Math.max(puzzleScores[r.meta.puzzleIdx] || 0, r.score);
-    }
-  });
+  // Then fetch from Supabase (source of truth)
+  try {
+    const { supabase } = await import('../lib/supabaseClient.js');
+    const { data } = await supabase.from('attempt_logs').select('meta, score')
+      .eq('team_name', player.team_name).eq('game', 'crossword')
+      .order('created_at', { ascending: true });
+
+    (data || []).forEach(r => {
+      if (r.meta?.puzzleIdx !== undefined) {
+        puzzleScores[r.meta.puzzleIdx] = Math.max(puzzleScores[r.meta.puzzleIdx] || 0, r.score);
+      }
+    });
+    // Update cache
+    localStorage.setItem(cacheKey, JSON.stringify({ puzzleScores: { ...puzzleScores } }));
+  } catch(e) {
+    console.warn('[crossword] Supabase load failed, using cached progress', e);
+  }
 }
 
 function isPuzzleUnlocked(idx) {
@@ -309,6 +323,10 @@ async function checkAnswers() {
   document.getElementById('res-time').textContent = formatTime(timerSecs);
   document.getElementById('results-section').hidden = false;
   document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+
+  // Cache progress locally
+  const cacheKey = `crossword_progress_${player.team_name}`;
+  localStorage.setItem(cacheKey, JSON.stringify({ puzzleScores: { ...puzzleScores } }));
 
   await submitScore({
     usn: player.team_name, game: 'crossword', score: totalScore,

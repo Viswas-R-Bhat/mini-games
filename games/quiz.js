@@ -1,9 +1,11 @@
 import { initPlayer, submitScore, getAttemptInfo } from '../lib/submitScore.js';
-import { questions as allQuestions } from '../data/quiz.js';
+import { questionsByRound } from '../data/quiz.js';
 
 const NUM_QUESTIONS = 10;
 const TIME_PER_Q = 10;
 const BASE_ATTEMPTS = 3;
+
+const ROUND_LABELS = { 1: 'General Knowledge', 2: 'Basic CS', 3: 'Hard CS' };
 
 let player = null;
 let questions = [];
@@ -16,22 +18,29 @@ let finished = false;
 let answered = false;
 let attemptScores = [];
 let attemptInfo = null;
+let currentRound = 1;
 
 document.addEventListener('DOMContentLoaded', async () => {
   player = await initPlayer();
   attemptInfo = await getAttemptInfo(player.team_name, 'quiz', BASE_ATTEMPTS);
   await loadPreviousAttempts();
 
+  // Determine which round based on attempts used
+  currentRound = Math.min(attemptScores.length + 1, 3);
+
   if (attemptInfo.remaining <= 0) {
     showNoAttemptsLeft();
     return;
   }
 
-  const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+  // Pick questions from the current round
+  const roundQuestions = questionsByRound[currentRound] || questionsByRound[3];
+  const shuffled = [...roundQuestions].sort(() => Math.random() - 0.5);
   questions = shuffled.slice(0, NUM_QUESTIONS);
   attachListeners();
   showQuestion();
   updateAttemptDisplay();
+  updateRoundDisplay();
 });
 
 async function loadPreviousAttempts() {
@@ -45,6 +54,11 @@ async function loadPreviousAttempts() {
 function updateAttemptDisplay() {
   const el = document.getElementById('attempt-display');
   if (el) el.textContent = `${Math.min(attemptScores.length + 1, attemptInfo.allowed)} / ${attemptInfo.allowed}`;
+}
+
+function updateRoundDisplay() {
+  const el = document.getElementById('q-category');
+  if (el) el.textContent = `Round ${currentRound}: ${ROUND_LABELS[currentRound]}`;
 }
 
 function showNoAttemptsLeft() {
@@ -73,7 +87,6 @@ function showQuestion() {
   const q = questions[current];
 
   document.getElementById('q-progress').textContent = `${current + 1}/${NUM_QUESTIONS}`;
-  document.getElementById('q-category').textContent = q.category;
   document.getElementById('q-text').textContent = q.question;
   document.getElementById('q-timer').textContent = TIME_PER_Q;
   document.getElementById('q-timer').classList.remove('timer-urgent');
@@ -134,18 +147,25 @@ async function endGame() {
   document.getElementById('res-correct').textContent = `${correct}/${NUM_QUESTIONS}`;
   document.getElementById('res-time').textContent = `${totalTime}s`;
   document.getElementById('res-score').textContent = score;
-  document.getElementById('res-title-text').textContent = 'GAME OVER';
+  document.getElementById('res-title-text').textContent = `ROUND ${currentRound} COMPLETE`;
   document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
 
   await submitScore({
     usn: player.team_name, game: 'quiz', score: best,
-    meta: { correct, total: NUM_QUESTIONS, timeTaken: totalTime, attemptScores: [...attemptScores] },
+    meta: { correct, total: NUM_QUESTIONS, timeTaken: totalTime, round: currentRound, attemptScores: [...attemptScores] },
   });
+
+  // Save progress to localStorage as backup
+  localStorage.setItem(`quiz_progress_${player.team_name}`, JSON.stringify({ attemptScores, round: currentRound }));
 
   attemptInfo = await getAttemptInfo(player.team_name, 'quiz', BASE_ATTEMPTS);
   updateAttemptDisplay();
+
+  const btn = document.getElementById('play-again-btn');
   if (attemptInfo.remaining <= 0) {
-    const btn = document.getElementById('play-again-btn');
     if (btn) btn.style.display = 'none';
+  } else {
+    const nextRound = Math.min(currentRound + 1, 3);
+    if (btn) btn.textContent = `NEXT: ROUND ${nextRound} — ${ROUND_LABELS[nextRound]} →`;
   }
 }

@@ -51,6 +51,13 @@
     .game-card:hover::before{transform:scaleX(1)}
     .game-card-status{position:absolute;top:1rem;right:1rem;font-family:var(--ff-mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;padding:.18rem .5rem;border-radius:4px}
     .status-live{background:rgba(79,255,176,.12);color:var(--primary);border:1px solid rgba(79,255,176,.25)}
+
+    /* Locked game card */
+    .game-card.locked{opacity:.45;pointer-events:none;filter:grayscale(.4)}
+    .game-card.locked::before{display:none}
+    .game-card.locked:hover{transform:none;box-shadow:none;border-color:var(--border)}
+    .status-locked{background:rgba(107,127,163,.12);color:var(--muted);border:1px solid rgba(107,127,163,.25)}
+
     .game-card-icon{font-size:2rem;line-height:1}
     .game-card-name{font-family:var(--ff-display);font-size:1.5rem;letter-spacing:.05em;color:var(--text)}
     .game-card-desc{font-size:.82rem;line-height:1.55;color:var(--muted);flex:1}
@@ -58,8 +65,10 @@
     .game-tag{font-family:var(--ff-mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--faint);border-radius:4px;padding:.18rem .45rem}
     .game-card-cta{font-family:var(--ff-display);font-size:.95rem;letter-spacing:.08em;color:var(--card-accent,var(--primary));display:flex;align-items:center;gap:.35rem}
     .game-card-cta::after{content:'→'}
+    .game-card.locked .game-card-cta{color:var(--muted)}
+    .game-card.locked .game-card-cta::after{content:'🔒'}
 
-    /* Leaderboard banner (shown when admin enables) */
+    /* Leaderboard banner */
     #lb-banner{display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem 2rem;margin-bottom:2rem;animation:slideUp .4s ease}
     #lb-banner .lb-title{font-family:var(--ff-display);font-size:1.5rem;letter-spacing:.06em;color:var(--primary);margin-bottom:1rem}
     @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
@@ -86,7 +95,7 @@
   <section class="hero">
     <p class="hero-kicker">Compete · Score · Dominate</p>
     <h1 class="hero-title">RACE THE<br/><span class="line2">CLOCK</span></h1>
-    <p class="hero-desc">A collection of skill-based challenges where every point counts. Login as your team and compete across 6 games.</p>
+    <p class="hero-desc">A collection of skill-based challenges where every point counts. Login as your team and compete across 6 games. Games unlock sequentially — complete one to access the next!</p>
     <div class="hero-stats">
       <div><div class="hero-stat-val">6</div><div class="hero-stat-label">Games</div></div>
       <div><div class="hero-stat-val">LTD</div><div class="hero-stat-label">Attempts</div></div>
@@ -116,55 +125,8 @@
     <span class="section-head-line"></span>
   </div>
 
-  <div class="games-grid">
-    <a class="game-card" href="pages/typing.html" style="--card-accent:#4fffb0">
-      <span class="game-card-status status-live">Live</span>
-      <div class="game-card-icon">⌨️</div>
-      <div class="game-card-name">TYPING SPEED</div>
-      <div class="game-card-desc">Type a paragraph in 30s. Best 3 of 5 attempts scored.</div>
-      <div class="game-card-meta"><span class="game-tag">5 Attempts</span><span class="game-tag">Best 3</span><span class="game-tag">WPM</span></div>
-      <div class="game-card-cta">Play now</div>
-    </a>
-    <a class="game-card" href="pages/reaction.html" style="--card-accent:#ff6b35">
-      <span class="game-card-status status-live">Live</span>
-      <div class="game-card-icon">⚡</div>
-      <div class="game-card-name">REACTION TIME</div>
-      <div class="game-card-desc">Click the moment it turns green. 3 attempts, all scored.</div>
-      <div class="game-card-meta"><span class="game-tag">3 Attempts</span><span class="game-tag">7 Rounds</span><span class="game-tag">Reflex</span></div>
-      <div class="game-card-cta">Play now</div>
-    </a>
-    <a class="game-card" href="pages/memory.html" style="--card-accent:#a78bfa">
-      <span class="game-card-status status-live">Live</span>
-      <div class="game-card-icon">🧠</div>
-      <div class="game-card-name">MEMORY MATCH</div>
-      <div class="game-card-desc">3 levels — Easy, Medium, Hard. Unlock each by clearing the previous.</div>
-      <div class="game-card-meta"><span class="game-tag">3 Levels</span><span class="game-tag">Sequential</span><span class="game-tag">Pairs</span></div>
-      <div class="game-card-cta">Play now</div>
-    </a>
-    <a class="game-card" href="pages/quiz.html" style="--card-accent:#ffd32a">
-      <span class="game-card-status status-live">Live</span>
-      <div class="game-card-icon">❓</div>
-      <div class="game-card-name">CS QUIZ</div>
-      <div class="game-card-desc">Hard CS questions — 10s per question. 3 attempts total.</div>
-      <div class="game-card-meta"><span class="game-tag">3 Attempts</span><span class="game-tag">10s Timer</span><span class="game-tag">Hard</span></div>
-      <div class="game-card-cta">Play now</div>
-    </a>
-    <a class="game-card" href="pages/crossword.html" style="--card-accent:#fb7185">
-      <span class="game-card-status status-live">Live</span>
-      <div class="game-card-icon">📰</div>
-      <div class="game-card-name">CROSSWORD</div>
-      <div class="game-card-desc">3 puzzles — 1 Easy, 2 Hard. Unlock sequentially.</div>
-      <div class="game-card-meta"><span class="game-tag">3 Puzzles</span><span class="game-tag">Sequential</span><span class="game-tag">Vocab</span></div>
-      <div class="game-card-cta">Play now</div>
-    </a>
-    <a class="game-card" href="pages/debug.html" style="--card-accent:#38bdf8">
-      <span class="game-card-status status-live">Live</span>
-      <div class="game-card-icon">🐛</div>
-      <div class="game-card-name">CODE DEBUG</div>
-      <div class="game-card-desc">Find bugs in C, C++, Python. Easy/Medium/Hard with weighted points.</div>
-      <div class="game-card-meta"><span class="game-tag">Weighted</span><span class="game-tag">C/C++/Py</span><span class="game-tag">Mixed</span></div>
-      <div class="game-card-cta">Play now</div>
-    </a>
+  <div class="games-grid" id="games-grid">
+    <!-- Game cards are rendered by JS based on unlock status -->
   </div>
 
   <footer>
@@ -175,9 +137,51 @@
 
 <script type="module">
   import { supabase } from './lib/supabaseClient.js';
-  import { checkLeaderboardVisible } from './lib/submitScore.js';
+  import { checkLeaderboardVisible, getGameAttemptCount } from './lib/submitScore.js';
+
+  // Game definitions in order — each game requires the previous one to have ≥1 attempt
+  const GAMES = [
+    {
+      id: 'typing', href: 'pages/typing.html', icon: '⌨️', name: 'TYPING SPEED',
+      desc: 'Type a paragraph in 30s. Best 3 of 5 attempts scored.',
+      tags: ['5 Attempts', 'Best 3', 'WPM'], accent: '#4fffb0',
+      requiresGame: null, // Always unlocked (first game)
+    },
+    {
+      id: 'reaction', href: 'pages/reaction.html', icon: '⚡', name: 'REACTION TIME',
+      desc: 'Click the moment it turns green. 3 attempts, all scored.',
+      tags: ['3 Attempts', '7 Rounds', 'Reflex'], accent: '#ff6b35',
+      requiresGame: 'typing',
+    },
+    {
+      id: 'memory', href: 'pages/memory.html', icon: '🧠', name: 'MEMORY MATCH',
+      desc: '3 levels — GK → Basic CS → Hard CS. Match pairs to unlock the next level.',
+      tags: ['3 Rounds', 'Sequential', 'Pairs'], accent: '#a78bfa',
+      requiresGame: 'reaction',
+    },
+    {
+      id: 'quiz', href: 'pages/quiz.html', icon: '❓', name: 'QUIZ',
+      desc: '3 rounds — GK → Basic CS → Hard CS. 10 questions per round, 10s each.',
+      tags: ['3 Rounds', '10s Timer', 'Progressive'], accent: '#ffd32a',
+      requiresGame: 'memory',
+    },
+    {
+      id: 'crossword', href: 'pages/crossword.html', icon: '📰', name: 'CROSSWORD',
+      desc: '3 puzzles — GK → Basic CS → Hard CS. Unlock sequentially.',
+      tags: ['3 Puzzles', 'Sequential', 'Vocab'], accent: '#fb7185',
+      requiresGame: 'quiz',
+    },
+    {
+      id: 'debug', href: 'pages/debug.html', icon: '🐛', name: 'CODE DEBUG',
+      desc: 'Find bugs in C, C++, Python. Easy/Medium/Hard with weighted points.',
+      tags: ['Weighted', 'C/C++/Py', 'Mixed'], accent: '#38bdf8',
+      requiresGame: 'crossword',
+    },
+  ];
 
   const teamName = localStorage.getItem('team_name');
+
+  // Show team bar if logged in
   if (teamName) {
     const bar = document.getElementById('team-bar');
     document.getElementById('tb-name').textContent = teamName;
@@ -191,7 +195,67 @@
     }
   });
 
-  // Poll leaderboard visibility
+  // ── Render game cards with unlock status ──
+  async function renderGameCards() {
+    const grid = document.getElementById('games-grid');
+    grid.innerHTML = '';
+
+    // Fetch attempt counts for all games (parallel)
+    const attemptCounts = {};
+    if (teamName) {
+      const results = await Promise.all(
+        GAMES.map(g => getGameAttemptCount(teamName, g.id).then(c => [g.id, c]))
+      );
+      results.forEach(([id, count]) => { attemptCounts[id] = count; });
+    }
+
+    GAMES.forEach((game, idx) => {
+      let unlocked = true;
+      let statusClass = 'status-live';
+      let statusText = 'Live';
+
+      // Check if game should be locked
+      if (game.requiresGame) {
+        const reqCount = attemptCounts[game.requiresGame] || 0;
+        if (!teamName || reqCount < 1) {
+          unlocked = false;
+          statusClass = 'status-locked';
+          const reqGame = GAMES.find(g => g.id === game.requiresGame);
+          statusText = `🔒 Complete ${reqGame?.name || game.requiresGame}`;
+        }
+      }
+
+      // First game is always unlocked (but still needs team login)
+      if (!game.requiresGame) unlocked = true;
+
+      const card = document.createElement('a');
+      card.className = `game-card ${unlocked ? '' : 'locked'}`;
+      card.href = unlocked ? game.href : '#';
+      card.style.setProperty('--card-accent', game.accent);
+
+      if (!unlocked) {
+        card.addEventListener('click', e => {
+          e.preventDefault();
+          const reqGame = GAMES.find(g => g.id === game.requiresGame);
+          alert(`🔒 This game is locked!\n\nComplete at least 1 attempt in "${reqGame?.name}" to unlock.`);
+        });
+      }
+
+      card.innerHTML = `
+        <span class="game-card-status ${statusClass}">${statusText}</span>
+        <div class="game-card-icon">${game.icon}</div>
+        <div class="game-card-name">${game.name}</div>
+        <div class="game-card-desc">${game.desc}</div>
+        <div class="game-card-meta">${game.tags.map(t => `<span class="game-tag">${t}</span>`).join('')}</div>
+        <div class="game-card-cta">${unlocked ? 'Play now' : 'Locked'}</div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  renderGameCards();
+
+  // ── Poll leaderboard visibility ──
   async function checkLB() {
     try {
       const visible = await checkLeaderboardVisible();
