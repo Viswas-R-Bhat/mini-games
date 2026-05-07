@@ -435,28 +435,51 @@ function onInput(e, r, c) {
 
 // ── Clue activation & highlighting ───────────────────────────────────────────
 function activateClue(clue, dir) {
-  if (!clue) return;
   activeClue = clue;
   activeDir  = dir;
 
-  document.querySelectorAll('.xw-cell').forEach(el =>
-    el.classList.remove('xw-highlight', 'xw-active-cell'));
-  document.querySelectorAll('.clue-item').forEach(el =>
-    el.classList.remove('clue-active'));
+  // Remove previous highlights
+  document.querySelectorAll('.xw-active, .xw-active-cell')
+    .forEach(el => el.classList.remove('xw-active', 'xw-active-cell'));
 
+  // Highlight clue text
+  const clueEl = document.getElementById(`clue-${dir}-${clue.number}`);
+  if (clueEl) clueEl.classList.add('xw-active');
+
+  // Highlight full word path
   for (let i = 0; i < clue.answer.length; i++) {
-    const cr = dir === 'across' ? clue.row     : clue.row + i;
-    const cc = dir === 'across' ? clue.col + i : clue.col;
-    if (isBlack(cr, cc)) continue;
-    getCellEl(cr, cc)?.classList.add('xw-highlight');
+    const r = dir === 'down'
+      ? clue.row + i
+      : clue.row;
+
+    const c = dir === 'across'
+      ? clue.col + i
+      : clue.col;
+
+    getCellEl(r, c)?.classList.add('xw-active');
   }
 
-  getCellEl(clue.row, clue.col)?.classList.add('xw-active-cell');
+  // Highlight the currently focused cell if inside this word
+  const focused = document.activeElement;
 
-  const clueEl = document.querySelector(
-    `.clue-item[data-number="${clue.number}"][data-direction="${dir}"]`
-  );
-  if (clueEl) { clueEl.classList.add('clue-active'); clueEl.scrollIntoView({ block: 'nearest' }); }
+  if (focused?.classList.contains('xw-input')) {
+    const fr = Number(focused.dataset.row);
+    const fc = Number(focused.dataset.col);
+
+    const index =
+      dir === 'across'
+        ? fc - clue.col
+        : fr - clue.row;
+
+    if (index >= 0 && index < clue.answer.length) {
+      getCellEl(fr, fc)?.classList.add('xw-active-cell');
+      return;
+    }
+  }
+
+  // Otherwise highlight the start cell
+  getCellEl(clue.row, clue.col)
+    ?.classList.add('xw-active-cell');
 }
 
 function cycleClue(reverse) {
@@ -474,21 +497,45 @@ function cycleClue(reverse) {
 // ── Movement helpers ──────────────────────────────────────────────────────────
 function advanceToNext(r, c) {
   if (!activeClue) return;
-  const dr  = activeDir === 'down'   ? 1 : 0;
-  const dc  = activeDir === 'across' ? 1 : 0;
-  const nr  = r + dr, nc = c + dc;
-  const endR = activeDir === 'across' ? activeClue.row : activeClue.row + activeClue.answer.length - 1;
-  const endC = activeDir === 'across' ? activeClue.col + activeClue.answer.length - 1 : activeClue.col;
-  if (nr <= endR && nc <= endC) getInput(nr, nc)?.focus();
+
+  const index =
+    activeDir === 'across'
+      ? c - activeClue.col
+      : r - activeClue.row;
+
+  if (index + 1 >= activeClue.answer.length) return;
+
+  const nr =
+    activeDir === 'down'
+      ? activeClue.row + index + 1
+      : r;
+
+  const nc =
+    activeDir === 'across'
+      ? activeClue.col + index + 1
+      : c;
+
+  getInput(nr, nc)?.focus();
 }
 
 function prevCell(r, c) {
   if (!activeClue) return null;
-  const dr = activeDir === 'down'   ? 1 : 0;
-  const dc = activeDir === 'across' ? 1 : 0;
-  const pr = r - dr, pc = c - dc;
-  if (pr >= activeClue.row && pc >= activeClue.col) return { r: pr, c: pc };
-  return null;
+
+  const index =
+    activeDir === 'across'
+      ? c - activeClue.col
+      : r - activeClue.row;
+
+  if (index - 1 < 0) return null;
+
+  return {
+    r: activeDir === 'down'
+      ? activeClue.row + index - 1
+      : r,
+    c: activeDir === 'across'
+      ? activeClue.col + index - 1
+      : c,
+  };
 }
 
 function moveFocus(r, c) {
