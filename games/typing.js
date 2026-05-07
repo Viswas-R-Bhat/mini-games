@@ -183,7 +183,7 @@ function computeMetrics(typed, cheated) {
   const accuracy      = totalTyped > 0
     ? parseFloat(((correctChars / totalTyped) * 100).toFixed(1))
     : 0;
-  const wpm           = parseFloat((correctChars / 5).toFixed(1));
+  const wpm           = parseFloat(((correctChars / 5) / (GAME_DURATION / 60)).toFixed(1));
   const score         = Math.floor(wpm * (accuracy / 100));
 
   return { wpm, accuracy, score, correctChars, totalTyped };

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CS Quiz — MiniGames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#080b14;--surface:#0f1623;--surface2:#141d2e;--border:#1e2d45;--border2:#2a3f5f;--primary:#4fffb0;--warn:#ff6b35;--text:#e8eaf0;--muted:#6b7fa3;--faint:#2a3a52;--correct:#4fffb0;--wrong:#ff4757;--ff-display:'Bebas Neue',sans-serif;--ff-mono:'JetBrains Mono',monospace;--ff-body:'Plus Jakarta Sans',sans-serif}
+    html{scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:var(--ff-body);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(79,255,176,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(79,255,176,.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+    .page{position:relative;z-index:1;max-width:780px;margin:0 auto;padding:2rem 1.5rem 4rem;width:100%}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+    .back-link{font-family:var(--ff-mono);font-size:.72rem;letter-spacing:.1em;color:var(--muted);text-decoration:none;transition:color .2s}.back-link:hover{color:var(--primary)}.back-link::before{content:'← '}
+    .site-tag{font-family:var(--ff-mono);font-size:.68rem;letter-spacing:.15em;color:var(--faint);text-transform:uppercase}
+    .hero{margin-bottom:2rem}
+    .hero-eyebrow{font-family:var(--ff-mono);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--primary);margin-bottom:.4rem}
+    h1{font-family:var(--ff-display);font-size:clamp(2.8rem,8vw,4.5rem);letter-spacing:.04em;line-height:.95;margin-bottom:.5rem}h1 span{color:var(--primary)}
+    .hero-sub{font-size:.88rem;color:var(--muted);max-width:420px;line-height:1.6}
+
+    /* HUD */
+    .hud{display:flex;align-items:center;gap:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+    .hud-stat{text-align:center}.hud-stat-val{font-family:var(--ff-display);font-size:1.8rem;color:var(--text);letter-spacing:.04em}
+    .hud-stat-label{font-family:var(--ff-mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:.15rem}
+    .hud-divider{width:1px;align-self:stretch;background:var(--border)}
+    .timer-urgent{color:var(--warn)!important;animation:pulse .6s ease infinite alternate}
+    @keyframes pulse{from{opacity:1}to{opacity:.6}}
+
+    /* Progress bar */
+    .progress-bar{width:100%;height:4px;background:var(--surface2);border-radius:2px;margin-bottom:1.5rem;overflow:hidden}
+    #progress-fill{height:100%;background:var(--primary);border-radius:2px;transition:width .4s ease;width:0}
+
+    /* Question card */
+    .q-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;margin-bottom:1.5rem}
+    #q-category{font-family:var(--ff-mono);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--primary);margin-bottom:.75rem}
+    #q-text{font-size:1.1rem;line-height:1.7;color:var(--text);margin-bottom:1.5rem;min-height:3rem}
+
+    /* Options */
+    #q-options{display:grid;gap:.75rem}
+    .option-btn{width:100%;text-align:left;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:.85rem 1.2rem;color:var(--text);font-family:var(--ff-body);font-size:.92rem;cursor:pointer;transition:border-color .2s,background .2s,transform .1s}
+    .option-btn:hover:not(:disabled){border-color:var(--primary);transform:translateX(4px)}
+    .option-btn:disabled{cursor:default}
+    .option-btn.opt-correct{border-color:var(--correct);background:rgba(79,255,176,.1);color:var(--correct)}
+    .option-btn.opt-wrong{border-color:var(--wrong);background:rgba(255,71,87,.1);color:var(--wrong)}
+
+    /* Results */
+    #results-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;margin-bottom:1.5rem;animation:slideUp .4s ease}
+    @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .res-title{font-family:var(--ff-display);font-size:1.6rem;letter-spacing:.06em;color:var(--primary);margin-bottom:1.5rem}
+    .res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem;margin-bottom:1.5rem}
+    .res-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem;text-align:center}
+    .res-val{font-family:var(--ff-display);font-size:2.4rem;letter-spacing:.04em;color:var(--text)}.res-val.hi{color:var(--primary)}
+    .res-label{font-family:var(--ff-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:.25rem}
+    .res-actions{display:flex;gap:.75rem;flex-wrap:wrap}
+    .btn{font-family:var(--ff-display);font-size:1rem;letter-spacing:.1em;border:none;border-radius:7px;padding:.6rem 1.4rem;cursor:pointer;transition:opacity .15s,transform .15s}.btn:hover{opacity:.85;transform:translateY(-1px)}
+    .btn-primary{background:var(--primary);color:var(--bg)}
+    .btn-outline{background:transparent;border:1.5px solid var(--border2);color:var(--text)}.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+
+    /* Leaderboard */
+    #lb-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:1.5rem;animation:slideUp .4s ease}
+    .lb-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem}
+    .lb-header-title{font-family:var(--ff-display);font-size:1.4rem;letter-spacing:.06em}
+    .lb-badge{font-family:var(--ff-mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;background:rgba(79,255,176,.1);color:var(--primary);border:1px solid rgba(79,255,176,.25);padding:.2rem .5rem;border-radius:4px}
+    #lb-loading{padding:1.5rem;text-align:center;font-family:var(--ff-mono);font-size:.8rem;color:var(--muted)}
+    table{width:100%;border-collapse:collapse}
+    thead th{font-family:var(--ff-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-align:left;padding:.7rem 1.5rem;border-bottom:1px solid var(--border)}
+    tbody tr{border-bottom:1px solid var(--border);transition:background .15s}tbody tr:last-child{border-bottom:none}tbody tr:hover{background:var(--surface2)}tbody tr.lb-mine{background:rgba(79,255,176,.06)}
+    tbody td{padding:.75rem 1.5rem;font-size:.88rem}
+    .lb-rank{font-family:var(--ff-mono);font-size:.78rem;color:var(--muted);width:48px}
+    tbody tr:nth-child(1) .lb-rank{color:#ffd700;font-weight:700}tbody tr:nth-child(2) .lb-rank{color:#c0c0c0;font-weight:700}tbody tr:nth-child(3) .lb-rank{color:#cd7f32;font-weight:700}
+    .lb-name{font-weight:600}.lb-usn{font-family:var(--ff-mono);font-size:.78rem;color:var(--muted)}
+    .lb-score{font-family:var(--ff-display);font-size:1.2rem;letter-spacing:.04em;color:var(--primary);text-align:right}
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <a class="back-link" href="../index.html">Games</a>
+    <span class="site-tag">MiniGames · VarAInce</span>
+  </header>
+  <div class="hero">
+    <p class="hero-eyebrow">Game 05 · 10 Questions · 10s Each</p>
+    <h1>CS<br/><span>QUIZ</span></h1>
+    <p class="hero-sub">Deep CS questions — DSA, OS, Networking, Databases. 10 seconds per question. No mercy.</p>
+  </div>
+
+  <div class="hud">
+    <div class="hud-stat"><div id="q-timer" class="hud-stat-val">10</div><div class="hud-stat-label">Seconds</div></div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat"><div id="q-progress" class="hud-stat-val">1/10</div><div class="hud-stat-label">Question</div></div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat"><div id="score-live" class="hud-stat-val">0</div><div class="hud-stat-label">Correct</div></div>
+  </div>
+
+  <div class="progress-bar"><div id="progress-fill"></div></div>
+
+  <div id="quiz-area">
+    <div class="q-card">
+      <div id="q-category">DSA</div>
+      <div id="q-text">Loading…</div>
+      <div id="q-options"></div>
+    </div>
+  </div>
+
+  <section id="results-section" hidden>
+    <p class="res-title">QUIZ COMPLETE</p>
+    <div class="res-grid">
+      <div class="res-card"><div id="res-correct" class="res-val hi">0/10</div><div class="res-label">Correct</div></div>
+      <div class="res-card"><div id="res-time" class="res-val">0s</div><div class="res-label">Total Time</div></div>
+      <div class="res-card"><div id="res-score" class="res-val hi">0</div><div class="res-label">Score</div></div>
+    </div>
+    <div class="res-actions">
+      <button id="view-lb-btn" class="btn btn-primary">View Leaderboard</button>
+      <button id="play-again-btn" class="btn btn-outline">Play Again</button>
+    </div>
+  </section>
+
+  <section id="lb-section" hidden>
+    <div class="lb-header"><span class="lb-header-title">LEADERBOARD</span><span class="lb-badge">Quiz</span></div>
+    <p id="lb-loading" hidden>Fetching scores…</p>
+    <table><thead><tr><th>#</th><th>Player</th><th>USN</th><th style="text-align:right">Score</th></tr></thead><tbody id="lb-body"></tbody></table>
+  </section>
+</div>
+<script type="module" src="../games/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Code Debug — MiniGames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#080b14;--surface:#0f1623;--surface2:#141d2e;--border:#1e2d45;--border2:#2a3f5f;--primary:#4fffb0;--warn:#ff6b35;--text:#e8eaf0;--muted:#6b7fa3;--faint:#2a3a52;--correct:#4fffb0;--wrong:#ff4757;--ff-display:'Bebas Neue',sans-serif;--ff-mono:'JetBrains Mono',monospace;--ff-body:'Plus Jakarta Sans',sans-serif}
+    html{scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:var(--ff-body);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(79,255,176,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(79,255,176,.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+    .page{position:relative;z-index:1;max-width:780px;margin:0 auto;padding:2rem 1.5rem 4rem;width:100%}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+    .back-link{font-family:var(--ff-mono);font-size:.72rem;letter-spacing:.1em;color:var(--muted);text-decoration:none;transition:color .2s}.back-link:hover{color:var(--primary)}.back-link::before{content:'← '}
+    .site-tag{font-family:var(--ff-mono);font-size:.68rem;letter-spacing:.15em;color:var(--faint);text-transform:uppercase}
+    .hero{margin-bottom:2rem}
+    .hero-eyebrow{font-family:var(--ff-mono);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--primary);margin-bottom:.4rem}
+    h1{font-family:var(--ff-display);font-size:clamp(2.8rem,8vw,4.5rem);letter-spacing:.04em;line-height:.95;margin-bottom:.5rem}h1 span{color:var(--primary)}
+    .hero-sub{font-size:.88rem;color:var(--muted);max-width:420px;line-height:1.6}
+
+    .hud{display:flex;align-items:center;gap:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+    .hud-stat{text-align:center}.hud-stat-val{font-family:var(--ff-display);font-size:1.8rem;color:var(--text);letter-spacing:.04em}
+    .hud-stat-label{font-family:var(--ff-mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:.15rem}
+    .hud-divider{width:1px;align-self:stretch;background:var(--border)}
+
+    /* Code display */
+    .code-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1rem;overflow-x:auto}
+    .snippet-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem}
+    #snippet-title{font-family:var(--ff-display);font-size:1.3rem;letter-spacing:.06em}
+    #snippet-lang{font-family:var(--ff-mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;background:rgba(79,255,176,.1);color:var(--primary);border:1px solid rgba(79,255,176,.25);padding:.15rem .45rem;border-radius:4px}
+
+    #code-display{font-family:var(--ff-mono);font-size:.88rem;line-height:1}
+    .code-line{display:flex;align-items:stretch;cursor:pointer;border-radius:4px;transition:background .15s;border:1px solid transparent;margin-bottom:1px}
+    .code-line:hover{background:var(--surface2)}
+    .code-line.line-selected{background:rgba(255,215,0,.1);border-color:rgba(255,215,0,.3)}
+    .code-line.line-bug{background:rgba(255,71,87,.12);border-color:rgba(255,71,87,.3)}
+    .code-line.line-wrong-pick{background:rgba(255,107,53,.1);border-color:rgba(255,107,53,.3)}
+    .line-num{min-width:36px;padding:.55rem .5rem;color:var(--muted);font-size:.72rem;text-align:right;user-select:none;border-right:1px solid var(--border);margin-right:.75rem;flex-shrink:0}
+    .line-code{padding:.55rem 0;white-space:pre;color:var(--text)}
+
+    #instruction-text{font-family:var(--ff-mono);font-size:.75rem;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+
+    /* Fix area */
+    #fix-area{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+    #fix-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:6px;padding:.7rem 1rem;color:var(--text);font-family:var(--ff-mono);font-size:.88rem;outline:none;margin-bottom:.75rem;transition:border-color .2s}
+    #fix-input:focus{border-color:var(--primary)}
+    #fix-input::placeholder{color:var(--faint)}
+
+    /* Round result */
+    #round-result{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+    #round-feedback{font-family:var(--ff-mono);font-size:.82rem;margin-bottom:.5rem;line-height:1.5}
+    #round-hint{font-size:.78rem;color:var(--muted);margin-bottom:.5rem}
+    #correct-fix{font-family:var(--ff-mono);font-size:.82rem;color:var(--primary);background:var(--bg);padding:.5rem .75rem;border-radius:4px;border:1px solid var(--border);white-space:pre}
+
+    .btn{font-family:var(--ff-display);font-size:1rem;letter-spacing:.1em;border:none;border-radius:7px;padding:.6rem 1.4rem;cursor:pointer;transition:opacity .15s,transform .15s}.btn:hover{opacity:.85;transform:translateY(-1px)}
+    .btn-primary{background:var(--primary);color:var(--bg)}
+    .btn-outline{background:transparent;border:1.5px solid var(--border2);color:var(--text)}.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+    .btn-warn{background:var(--warn);color:var(--bg)}
+
+    /* Results */
+    #results-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;margin-bottom:1.5rem;animation:slideUp .4s ease}
+    @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .res-title{font-family:var(--ff-display);font-size:1.6rem;letter-spacing:.06em;color:var(--primary);margin-bottom:1.5rem}
+    .res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem;margin-bottom:1.5rem}
+    .res-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem;text-align:center}
+    .res-val{font-family:var(--ff-display);font-size:2.4rem;letter-spacing:.04em;color:var(--text)}.res-val.hi{color:var(--primary)}
+    .res-label{font-family:var(--ff-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:.25rem}
+    .res-actions{display:flex;gap:.75rem;flex-wrap:wrap}
+
+    /* Leaderboard */
+    #lb-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:1.5rem;animation:slideUp .4s ease}
+    .lb-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem}
+    .lb-header-title{font-family:var(--ff-display);font-size:1.4rem;letter-spacing:.06em}
+    .lb-badge{font-family:var(--ff-mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;background:rgba(79,255,176,.1);color:var(--primary);border:1px solid rgba(79,255,176,.25);padding:.2rem .5rem;border-radius:4px}
+    #lb-loading{padding:1.5rem;text-align:center;font-family:var(--ff-mono);font-size:.8rem;color:var(--muted)}
+    table{width:100%;border-collapse:collapse}
+    thead th{font-family:var(--ff-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-align:left;padding:.7rem 1.5rem;border-bottom:1px solid var(--border)}
+    tbody tr{border-bottom:1px solid var(--border);transition:background .15s}tbody tr:last-child{border-bottom:none}tbody tr:hover{background:var(--surface2)}tbody tr.lb-mine{background:rgba(79,255,176,.06)}
+    tbody td{padding:.75rem 1.5rem;font-size:.88rem}
+    .lb-rank{font-family:var(--ff-mono);font-size:.78rem;color:var(--muted);width:48px}
+    tbody tr:nth-child(1) .lb-rank{color:#ffd700;font-weight:700}tbody tr:nth-child(2) .lb-rank{color:#c0c0c0;font-weight:700}tbody tr:nth-child(3) .lb-rank{color:#cd7f32;font-weight:700}
+    .lb-name{font-weight:600}.lb-usn{font-family:var(--ff-mono);font-size:.78rem;color:var(--muted)}
+    .lb-score{font-family:var(--ff-display);font-size:1.2rem;letter-spacing:.04em;color:var(--primary);text-align:right}
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <a class="back-link" href="../index.html">Games</a>
+    <span class="site-tag">MiniGames · VarAInce</span>
+  </header>
+  <div class="hero">
+    <p class="hero-eyebrow">Game 06 · 5 Rounds · Multi-Language</p>
+    <h1>CODE<br/><span>DEBUG</span></h1>
+    <p class="hero-sub">Find the bug, click the line, type the fix. Subtle logic errors across JS, Python, and C.</p>
+  </div>
+
+  <div class="hud">
+    <div class="hud-stat"><div id="timer" class="hud-stat-val">00:00</div><div class="hud-stat-label">Time</div></div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat"><div id="round-num" class="hud-stat-val">1/5</div><div class="hud-stat-label">Round</div></div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat"><div id="score-live" class="hud-stat-val">0</div><div class="hud-stat-label">Points</div></div>
+  </div>
+
+  <div id="debug-area">
+    <div id="instruction-text">Click the line that contains the bug</div>
+
+    <div class="code-card">
+      <div class="snippet-header">
+        <span id="snippet-title">—</span>
+        <span id="snippet-lang">JS</span>
+      </div>
+      <div id="code-display"></div>
+    </div>
+
+    <div id="fix-area" hidden>
+      <input id="fix-input" type="text" placeholder="Type the corrected line…" autocomplete="off" spellcheck="false" />
+      <button id="submit-fix" class="btn btn-primary">SUBMIT FIX</button>
+    </div>
+
+    <div id="round-result" hidden>
+      <div id="round-feedback"></div>
+      <div id="round-hint"></div>
+      <div id="correct-fix"></div>
+      <br/>
+      <button id="next-round" class="btn btn-warn">NEXT ROUND →</button>
+    </div>
+  </div>
+
+  <section id="results-section" hidden>
+    <p class="res-title">DEBUG COMPLETE</p>
+    <div class="res-grid">
+      <div class="res-card"><div id="res-points" class="res-val">0</div><div class="res-label">Raw Points</div></div>
+      <div class="res-card"><div id="res-time" class="res-val">00:00</div><div class="res-label">Time</div></div>
+      <div class="res-card"><div id="res-score" class="res-val hi">0</div><div class="res-label">Final Score</div></div>
+    </div>
+    <div class="res-actions">
+      <button id="view-lb-btn" class="btn btn-primary">View Leaderboard</button>
+      <button id="play-again-btn" class="btn btn-outline">Play Again</button>
+    </div>
+  </section>
+
+  <section id="lb-section" hidden>
+    <div class="lb-header"><span class="lb-header-title">LEADERBOARD</span><span class="lb-badge">Debug</span></div>
+    <p id="lb-loading" hidden>Fetching scores…</p>
+    <table><thead><tr><th>#</th><th>Player</th><th>USN</th><th style="text-align:right">Score</th></tr></thead><tbody id="lb-body"></tbody></table>
+  </section>
+</div>
+<script type="module" src="../games/debug.js"></script>
+</body>
+</html>

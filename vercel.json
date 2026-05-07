@@ -3,6 +3,10 @@
   "buildCommand": "",
   "rewrites": [
     { "source": "/typing",    "destination": "/pages/typing.html" },
-    { "source": "/crossword", "destination": "/pages/crossword.html" }
+    { "source": "/crossword", "destination": "/pages/crossword.html" },
+    { "source": "/reaction",  "destination": "/pages/reaction.html" },
+    { "source": "/memory",    "destination": "/pages/memory.html" },
+    { "source": "/quiz",      "destination": "/pages/quiz.html" },
+    { "source": "/debug",     "destination": "/pages/debug.html" }
   ]
 }

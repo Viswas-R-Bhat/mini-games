@@ -70,6 +70,7 @@ function validateCrossword(cw) {
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
+let player   = null;
 let puzzle;
 let cellMap  = {};   // "r,c" → { el, inputEl, r, c }
 let clueList = [];   // flat sorted list of all clues
@@ -82,7 +83,7 @@ let finished = false;
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 async function init() {
-  await initPlayer();
+  player = await initPlayer();
 
   // Pick a random puzzle
   puzzle = crosswords[Math.floor(Math.random() * crosswords.length)];
@@ -393,7 +394,7 @@ async function checkAnswers() {
 
   // Submit to leaderboard
   try {
-    const player = JSON.parse(localStorage.getItem('mg_player') || '{}');
+
     await submitScore({
       usn:   player.usn,
       game:  'crossword',
@@ -420,7 +421,7 @@ async function showLeaderboard() {
     const rows   = await loadLeaderboard('crossword');
     loading.hidden = true;
 
-    const player = JSON.parse(localStorage.getItem('mg_player') || '{}');
+
     const tbody  = document.getElementById('lb-body');
     tbody.innerHTML = rows.map((row, i) => `
       <tr class="${row.usn === player.usn ? 'lb-mine' : ''}">
