@@ -1,31 +1,37 @@
 // 3 crosswords — sequential unlock.
-// Puzzle 1 (Round 1): General Knowledge (Easy)
+// Puzzle 1 (Round 1): General Knowledge (Easy) — 7 words
 // Puzzle 2 (Round 2): Basic CS (Medium)
 // Puzzle 3 (Round 3): Hard CS
 
 export const crosswords = [
   // ── PUZZLE 1 — General Knowledge (Easy) ──────────────────────────
+  //   M A R S ·        Across: 1-MARS, 4-TYPE, 5-SOLAR, 6-CODE
+  //   U T Y P E        Down:   1-MUSIC, 2-ATOM, 3-SPACE
+  //   S O L A R
+  //   I M · C ·
+  //   C O D E ·
   {
     id: 'gk-easy',
     title: 'General Knowledge',
     difficulty: 'easy',
-    gridSize: { rows: 7, cols: 5 },
+    gridSize: { rows: 5, cols: 5 },
     grid: [
-      [  0,  'G', 'O', 'L', 'D' ],
-      [  0,  'R',  0,   0,   0  ],
-      [ 'W', 'A', 'T', 'E', 'R' ],
-      [  0,  'V',  0,   0,  'A' ],
-      [  0,  'I',  0,   0,  'D' ],
-      [  0,  'T',  0,   0,  'I' ],
-      [  0,  'Y',  0,   0,  'O' ],
+      [ 'M', 'A', 'R', 'S',  0  ],
+      [ 'U', 'T', 'Y', 'P', 'E' ],
+      [ 'S', 'O', 'L', 'A', 'R' ],
+      [ 'I', 'M',  0,  'C',  0  ],
+      [ 'C', 'O', 'D', 'E',  0  ],
     ],
     across: [
-      { clue: 1, row: 0, col: 1, answer: 'GOLD',  text: 'Precious metal with chemical symbol Au' },
-      { clue: 3, row: 2, col: 0, answer: 'WATER', text: 'H₂O — essential compound for life' },
+      { clue: 1, row: 0, col: 0, answer: 'MARS',  text: 'The fourth planet, known as the Red Planet' },
+      { clue: 4, row: 1, col: 1, answer: 'TYPE',  text: 'To input text using a keyboard' },
+      { clue: 5, row: 2, col: 0, answer: 'SOLAR', text: 'Relating to the Sun — ___ system, ___ energy' },
+      { clue: 6, row: 4, col: 0, answer: 'CODE',  text: 'Instructions for a computer, or a secret cipher' },
     ],
     down: [
-      { clue: 2, row: 0, col: 1, answer: 'GRAVITY', text: 'Force discovered by Newton that keeps us grounded' },
-      { clue: 4, row: 2, col: 4, answer: 'RADIO',   text: 'Device used to receive broadcast signals wirelessly' },
+      { clue: 1, row: 0, col: 0, answer: 'MUSIC', text: 'Art form combining rhythm, melody, and harmony' },
+      { clue: 2, row: 0, col: 1, answer: 'ATOM',  text: 'Smallest unit of a chemical element' },
+      { clue: 3, row: 0, col: 3, answer: 'SPACE', text: 'The vast expanse beyond Earth\'s atmosphere' },
     ],
   },
 
