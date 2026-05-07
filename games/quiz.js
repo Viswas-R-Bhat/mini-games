@@ -44,11 +44,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadPreviousAttempts() {
-  const { supabase } = await import('../lib/supabaseClient.js');
-  const { data } = await supabase.from('attempt_logs').select('score')
-    .eq('team_name', player.team_name).eq('game', 'quiz')
-    .order('created_at', { ascending: true });
-  attemptScores = (data || []).map(r => r.score);
+  // Load from localStorage first (instant, reliable)
+  const cacheKey = `quiz_scores_${player.team_name}`;
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+    if (cached.length) attemptScores = cached;
+  } catch {}
+
+  // Then try Supabase — only update if it has MORE data
+  try {
+    const { supabase } = await import('../lib/supabaseClient.js');
+    const { data } = await supabase.from('attempt_logs').select('score')
+      .eq('team_name', player.team_name).eq('game', 'quiz')
+      .order('created_at', { ascending: true });
+
+    const supaScores = (data || []).map(r => r.score);
+    if (supaScores.length >= attemptScores.length) {
+      attemptScores = supaScores;
+    }
+    localStorage.setItem(cacheKey, JSON.stringify(attemptScores));
+  } catch (e) {
+    console.warn('[quiz] Supabase load failed, using cached scores');
+  }
 }
 
 function updateAttemptDisplay() {
@@ -139,6 +156,8 @@ async function endGame() {
 
   const score = Math.max(0, Math.floor((correct / NUM_QUESTIONS) * 1000 - totalTime));
   attemptScores.push(score);
+  // Cache to localStorage immediately
+  localStorage.setItem(`quiz_scores_${player.team_name}`, JSON.stringify(attemptScores));
   const best = Math.max(...attemptScores);
 
   document.getElementById('progress-fill').style.width = '100%';

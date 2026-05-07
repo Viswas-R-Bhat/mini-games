@@ -71,14 +71,31 @@ function grabDOMRefs() {
 }
 
 async function loadPreviousAttempts() {
-  const { data } = await (await import('../lib/supabaseClient.js')).supabase
-    .from('attempt_logs')
-    .select('score')
-    .eq('team_name', player.team_name)
-    .eq('game', 'typing')
-    .order('created_at', { ascending: true });
+  // Load from localStorage first (instant, reliable)
+  const cacheKey = `typing_scores_${player.team_name}`;
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+    if (cached.length) attemptScores = cached;
+  } catch {}
 
-  attemptScores = (data || []).map(r => r.score);
+  // Then try Supabase — only update if it has MORE data
+  try {
+    const { data } = await (await import('../lib/supabaseClient.js')).supabase
+      .from('attempt_logs')
+      .select('score')
+      .eq('team_name', player.team_name)
+      .eq('game', 'typing')
+      .order('created_at', { ascending: true });
+
+    const supaScores = (data || []).map(r => r.score);
+    if (supaScores.length >= attemptScores.length) {
+      attemptScores = supaScores;
+    }
+    // Update cache with best known data
+    localStorage.setItem(cacheKey, JSON.stringify(attemptScores));
+  } catch (e) {
+    console.warn('[typing] Supabase load failed, using cached scores');
+  }
 }
 
 function updateAttemptDisplay() {
@@ -183,6 +200,8 @@ async function endGame(cheated = false) {
   const metrics = computeMetrics(typed, cheated);
 
   attemptScores.push(metrics.score);
+  // Cache to localStorage immediately
+  localStorage.setItem(`typing_scores_${player.team_name}`, JSON.stringify(attemptScores));
   const best3 = getBest3Score();
 
   showResults(metrics, best3);
