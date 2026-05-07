@@ -1,44 +1,48 @@
+// /data/crosswords.js
+// DATA ONLY — no logic, no DOM, no imports.
+// Engine picks a puzzle randomly; every entry here must pass validateCrossword().
+//
+// Grid: 0 = black cell | 'LETTER' = white cell (uppercase single char)
+// Clue numbers follow standard crossword order: left→right, top→bottom.
+
 export const crosswords = [
   {
-    id: "tech-10x10-2",
-    gridSize: 10,
+    id: 'cs-basics-1',
+    title: 'CS Basics',
+
+    // 6 rows × 7 cols
+    gridSize: { rows: 6, cols: 7 },
+
+    //         col:  0     1     2     3     4     5     6
     grid: [
-      ["", "", "", "#", "", "", "", "", "#", ""],
-      ["", "#", "", "#", "", "#", "#", "", "#", ""],
-      ["", "#", "", "", "", "", "#", "", "", ""],
-      ["", "#", "#", "#", "#", "", "#", "#", "#", ""],
-      ["", "", "", "", "#", "", "", "", "#", ""],
-      ["#", "#", "#", "", "#", "#", "#", "", "#", ""],
-      ["", "", "", "", "#", "", "", "", "", ""],
-      ["", "#", "#", "#", "#", "", "#", "#", "#", ""],
-      ["", "#", "", "", "", "", "#", "", "", ""],
-      ["", "", "", "#", "", "", "", "", "#", ""]
+      /* row 0 */ [  0,  'S', 'T', 'A', 'C', 'K',   0  ],
+      /* row 1 */ [  0,   0,   0,   0,   0,  'E',   0  ],
+      /* row 2 */ [  0,   0,   0,   0,   0,  'R',   0  ],
+      /* row 3 */ ['P', 'Y', 'T', 'H', 'O', 'N',   0  ],
+      /* row 4 */ [  0,  'C', 'A', 'C', 'H', 'E',   0  ],
+      /* row 5 */ [  0,   0,   0,   0,   0,  'L',   0  ],
     ],
-    clues: {
-      across: [
-        { number: 1,  row: 0, col: 0, answer: "ARRAY", clue: "Indexed collection" },
-        { number: 4,  row: 0, col: 4, answer: "STACK", clue: "LIFO structure" },
-        { number: 7,  row: 2, col: 2, answer: "QUEUE", clue: "FIFO structure" },
-        { number: 9,  row: 4, col: 0, answer: "GRAPH", clue: "Nodes and edges" },
-        { number: 11, row: 4, col: 5, answer: "TREE",  clue: "Hierarchical structure" },
-        { number: 13, row: 6, col: 0, answer: "CLASS", clue: "Blueprint of objects" },
-        { number: 15, row: 6, col: 5, answer: "LOGIC", clue: "Basis of reasoning" },
-        { number: 17, row: 8, col: 2, answer: "LOOPS", clue: "Used for iteration" },
-        { number: 19, row: 9, col: 0, answer: "CODE",  clue: "What programmers write" },
-        { number: 20, row: 9, col: 4, answer: "DEBUG", clue: "Remove errors" }
-      ],
-      down: [
-        { number: 2,  row: 0, col: 0, answer: "ALGO",     clue: "Step-by-step procedure" },
-        { number: 3,  row: 0, col: 2, answer: "RUNTIMES", clue: "Program execution moments" },
-        { number: 5,  row: 0, col: 5, answer: "CACHE",    clue: "Fast temporary storage" },
-        { number: 6,  row: 0, col: 7, answer: "KEY",      clue: "Used in maps" },
-        { number: 8,  row: 2, col: 9, answer: "NODE",     clue: "Graph element" },
-        { number: 10, row: 4, col: 3, answer: "HASH",     clue: "Used in hashmaps" },
-        { number: 12, row: 6, col: 1, answer: "OOP",      clue: "Programming paradigm" },
-        { number: 14, row: 6, col: 6, answer: "IF",       clue: "Conditional keyword" },
-        { number: 16, row: 8, col: 7, answer: "API",      clue: "Interface for software" },
-        { number: 18, row: 8, col: 9, answer: "IO",       clue: "Input and Output" }
-      ]
-    }
-  }
+
+    // Intersections verified:
+    //   STACK[4]  = K  @ (0,5)  =  KERNEL[0] = K  ✓
+    //   PYTHON[5] = N  @ (3,5)  =  KERNEL[3] = N  ✓
+    //   CACHE[4]  = E  @ (4,5)  =  KERNEL[4] = E  ✓
+
+    across: [
+      { clue: 1, row: 0, col: 1, answer: 'STACK',  text: 'Last in, first out data structure'             },
+      { clue: 3, row: 3, col: 0, answer: 'PYTHON', text: 'Popular high-level programming language'       },
+      { clue: 4, row: 4, col: 1, answer: 'CACHE',  text: 'Fast memory that stores frequently used data'  },
+    ],
+    down: [
+      { clue: 2, row: 0, col: 5, answer: 'KERNEL', text: 'Core of an operating system'                  },
+    ],
+  },
 ];
+
+// ─── HOW TO ADD A NEW PUZZLE ──────────────────────────────────────────────────
+// 1. Push a new object into the array above.
+// 2. Choose gridSize, lay out grid letters, fill across[] and down[].
+// 3. Manually verify every intersection: across_word[i] === down_word[j]
+//    at the shared cell.
+// 4. The engine's validateCrossword() will catch any remaining errors at runtime.
+// 5. DO NOT touch the engine (games/crossword.js) when adding puzzles.
