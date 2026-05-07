@@ -1,15 +1,19 @@
-// /games/memory.js — ENGINE ONLY — 5×4 Memory Match, 600ms reveal, hard mode.
+// /games/memory.js — 3 levels: Easy → Medium → Hard, sequential unlock.
 import { initPlayer, submitScore } from '../lib/submitScore.js';
-import { loadLeaderboard }         from '../lib/leaderboard.js';
-import { cardSets }                from '../data/memory.js';
+import { levels } from '../data/memory.js';
 
-const COLS = 5, ROWS = 4, TOTAL_PAIRS = 10;
 const REVEAL_MS = 600;
+const LEVEL_ORDER = ['easy', 'medium', 'hard'];
+const LEVEL_LABELS = { easy: 'EASY', medium: 'MEDIUM', hard: 'HARD' };
+const LEVEL_MULTIPLIER = { easy: 1, medium: 1.5, hard: 2 };
 
 let player = null;
-let cards = [];       // { id, pairId, text, side, flipped, matched }
+let currentLevel = 'easy';
+let levelScores = {};
+let cards = [];
 let flippedCards = [];
 let matchedCount = 0;
+let totalPairs = 0;
 let moves = 0;
 let timerSecs = 0;
 let timerRunning = false;
@@ -19,13 +23,80 @@ let finished = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
   player = await initPlayer();
-  setupGame();
-  attachListeners();
+  await loadProgress();
+  renderLevelSelect();
 });
 
-function setupGame() {
-  const set = cardSets[Math.floor(Math.random() * cardSets.length)];
+async function loadProgress() {
+  const { supabase } = await import('../lib/supabaseClient.js');
+  const { data } = await supabase.from('attempt_logs').select('meta, score')
+    .eq('team_name', player.team_name).eq('game', 'memory')
+    .order('created_at', { ascending: true });
+
+  (data || []).forEach(r => {
+    if (r.meta?.level) {
+      levelScores[r.meta.level] = Math.max(levelScores[r.meta.level] || 0, r.score);
+    }
+  });
+}
+
+function isLevelUnlocked(level) {
+  const idx = LEVEL_ORDER.indexOf(level);
+  if (idx === 0) return true;
+  const prevLevel = LEVEL_ORDER[idx - 1];
+  return (levelScores[prevLevel] || 0) > 0;
+}
+
+function renderLevelSelect() {
+  document.getElementById('level-select').hidden = false;
+  document.getElementById('game-area').hidden = true;
+  document.getElementById('results-section').hidden = true;
+
+  const container = document.getElementById('level-buttons');
+  container.innerHTML = '';
+
+  LEVEL_ORDER.forEach(level => {
+    const unlocked = isLevelUnlocked(level);
+    const score = levelScores[level] || 0;
+    const btn = document.createElement('button');
+    btn.className = `level-btn ${unlocked ? '' : 'locked'} ${score > 0 ? 'completed' : ''}`;
+    btn.innerHTML = `
+      <span class="level-name">${LEVEL_LABELS[level]}</span>
+      <span class="level-info">${levels[level].cols}×${levels[level].rows} · ${levels[level].totalPairs} pairs</span>
+      <span class="level-score">${score > 0 ? '✓ ' + score + ' pts' : unlocked ? 'PLAY →' : '🔒 LOCKED'}</span>
+    `;
+    if (unlocked) {
+      btn.addEventListener('click', () => startLevel(level));
+    }
+    container.appendChild(btn);
+  });
+}
+
+function startLevel(level) {
+  currentLevel = level;
+  const config = levels[level];
+  const setList = config.sets;
+  const set = setList[Math.floor(Math.random() * setList.length)];
+
+  totalPairs = config.totalPairs;
+  matchedCount = 0;
+  moves = 0;
+  timerSecs = 0;
+  timerRunning = false;
+  locked = false;
+  finished = false;
+  flippedCards = [];
+  clearInterval(timerInterval);
+
+  document.getElementById('level-select').hidden = true;
+  document.getElementById('game-area').hidden = false;
+  document.getElementById('results-section').hidden = true;
+
   document.getElementById('theme-name').textContent = set.title;
+  document.getElementById('current-level').textContent = LEVEL_LABELS[level];
+  document.getElementById('timer').textContent = '00:00';
+  document.getElementById('move-count').textContent = '0';
+  document.getElementById('pair-count').textContent = '0';
 
   const raw = [];
   set.pairs.forEach(p => {
@@ -33,20 +104,19 @@ function setupGame() {
     raw.push({ pairId: p.id, text: p.b, side: 'b' });
   });
 
-  // Shuffle
   for (let i = raw.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [raw[i], raw[j]] = [raw[j], raw[i]];
   }
 
   cards = raw.map((c, idx) => ({ ...c, idx, flipped: false, matched: false }));
-  renderGrid();
+  renderGrid(config.cols);
 }
 
-function renderGrid() {
+function renderGrid(cols) {
   const grid = document.getElementById('memory-grid');
   grid.innerHTML = '';
-  grid.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
   cards.forEach((card, i) => {
     const div = document.createElement('div');
@@ -78,20 +148,16 @@ function onCardClick(idx) {
 
     const [a, b] = flippedCards;
     if (cards[a].pairId === cards[b].pairId && cards[a].side !== cards[b].side) {
-      // Match!
       cards[a].matched = true;
       cards[b].matched = true;
       matchedCount++;
       document.getElementById('pair-count').textContent = matchedCount;
-
       markMatched(a);
       markMatched(b);
       flippedCards = [];
       locked = false;
-
-      if (matchedCount >= TOTAL_PAIRS) endGame();
+      if (matchedCount >= totalPairs) endGame();
     } else {
-      // Mismatch — reveal briefly then flip back
       setTimeout(() => {
         flipCard(a, false);
         flipCard(b, false);
@@ -110,11 +176,9 @@ function flipCard(idx, show) {
 }
 
 function markMatched(idx) {
-  const el = document.querySelectorAll('.mem-card')[idx];
-  el.classList.add('matched');
+  document.querySelectorAll('.mem-card')[idx].classList.add('matched');
 }
 
-// Timer
 function startTimer() {
   if (timerRunning) return;
   timerRunning = true;
@@ -125,59 +189,40 @@ function startTimer() {
 }
 
 function formatTime(s) {
-  return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
-// End game
 async function endGame() {
   if (finished) return;
   finished = true;
   clearInterval(timerInterval);
 
-  const score = Math.max(0, Math.floor((matchedCount / TOTAL_PAIRS) * 1000 - timerSecs));
+  const multiplier = LEVEL_MULTIPLIER[currentLevel];
+  const rawScore = Math.max(0, Math.floor((matchedCount / totalPairs) * 1000 - timerSecs));
+  const score = Math.floor(rawScore * multiplier);
 
-  document.getElementById('res-pairs').textContent = `${matchedCount}/${TOTAL_PAIRS}`;
+  levelScores[currentLevel] = Math.max(levelScores[currentLevel] || 0, score);
+
+  document.getElementById('res-pairs').textContent = `${matchedCount}/${totalPairs}`;
   document.getElementById('res-moves').textContent = moves;
   document.getElementById('res-time').textContent = formatTime(timerSecs);
   document.getElementById('res-score').textContent = score;
+  document.getElementById('res-level').textContent = LEVEL_LABELS[currentLevel];
   document.getElementById('results-section').hidden = false;
   document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
 
+  // Calculate total score across all levels
+  const totalScore = Object.values(levelScores).reduce((a, b) => a + b, 0);
+
   await submitScore({
-    usn: player.usn, game: 'memory', score,
-    meta: { pairs: matchedCount, moves, timeTaken: timerSecs },
+    usn: player.team_name, game: 'memory', score: totalScore,
+    meta: { level: currentLevel, levelScore: score, pairs: matchedCount, moves, timeTaken: timerSecs, levelScores: { ...levelScores } },
   });
 }
 
-function attachListeners() {
-  document.getElementById('view-lb-btn').addEventListener('click', showLeaderboard);
-  document.getElementById('play-again-btn').addEventListener('click', () => location.reload());
-}
-
-async function showLeaderboard() {
-  const section = document.getElementById('lb-section');
-  const loading = document.getElementById('lb-loading');
-  section.hidden = false;
-  loading.hidden = false;
-  section.scrollIntoView({ behavior: 'smooth' });
-
-  const rows = await loadLeaderboard('memory');
-  loading.hidden = true;
-  const tbody = document.getElementById('lb-body');
-
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted)">No scores yet.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = rows.map(row => `
-    <tr class="${row.usn === player.usn ? 'lb-mine' : ''}">
-      <td class="lb-rank">${row.rank}</td>
-      <td class="lb-name">${escHtml(row.username)}</td>
-      <td class="lb-usn">${escHtml(row.usn)}</td>
-      <td class="lb-score">${row.score}</td>
-    </tr>`).join('');
-}
+document.getElementById('back-to-levels')?.addEventListener('click', renderLevelSelect);
+document.getElementById('play-again-btn')?.addEventListener('click', renderLevelSelect);
 
 function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

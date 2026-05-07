@@ -1,10 +1,9 @@
-// /games/quiz.js — ENGINE ONLY — 10 questions, 10s timer, hard CS quiz.
-import { initPlayer, submitScore } from '../lib/submitScore.js';
-import { loadLeaderboard }         from '../lib/leaderboard.js';
+import { initPlayer, submitScore, getAttemptInfo } from '../lib/submitScore.js';
 import { questions as allQuestions } from '../data/quiz.js';
 
 const NUM_QUESTIONS = 10;
-const TIME_PER_Q    = 10; // seconds — hard mode
+const TIME_PER_Q = 10;
+const BASE_ATTEMPTS = 3;
 
 let player = null;
 let questions = [];
@@ -15,26 +14,61 @@ let qTimer = null;
 let qTimeLeft = TIME_PER_Q;
 let finished = false;
 let answered = false;
+let attemptScores = [];
+let attemptInfo = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   player = await initPlayer();
+  attemptInfo = await getAttemptInfo(player.team_name, 'quiz', BASE_ATTEMPTS);
+  await loadPreviousAttempts();
 
-  // Shuffle and pick 10
+  if (attemptInfo.remaining <= 0) {
+    showNoAttemptsLeft();
+    return;
+  }
+
   const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
   questions = shuffled.slice(0, NUM_QUESTIONS);
-
   attachListeners();
   showQuestion();
+  updateAttemptDisplay();
 });
 
+async function loadPreviousAttempts() {
+  const { supabase } = await import('../lib/supabaseClient.js');
+  const { data } = await supabase.from('attempt_logs').select('score')
+    .eq('team_name', player.team_name).eq('game', 'quiz')
+    .order('created_at', { ascending: true });
+  attemptScores = (data || []).map(r => r.score);
+}
+
+function updateAttemptDisplay() {
+  const el = document.getElementById('attempt-display');
+  if (el) el.textContent = `${Math.min(attemptScores.length + 1, attemptInfo.allowed)} / ${attemptInfo.allowed}`;
+}
+
+function showNoAttemptsLeft() {
+  const best = attemptScores.length ? Math.max(...attemptScores) : 0;
+  document.getElementById('quiz-area').hidden = true;
+  document.getElementById('results-section').hidden = false;
+  document.getElementById('res-correct').textContent = '—';
+  document.getElementById('res-time').textContent = '—';
+  document.getElementById('res-score').textContent = best + ' (best)';
+  document.getElementById('res-title-text').textContent = 'ALL ATTEMPTS USED';
+  const btn = document.getElementById('play-again-btn');
+  if (btn) btn.style.display = 'none';
+}
+
 function attachListeners() {
-  document.getElementById('view-lb-btn').addEventListener('click', showLeaderboard);
-  document.getElementById('play-again-btn').addEventListener('click', () => location.reload());
+  document.getElementById('play-again-btn').addEventListener('click', async () => {
+    attemptInfo = await getAttemptInfo(player.team_name, 'quiz', BASE_ATTEMPTS);
+    if (attemptInfo.remaining <= 0) { showNoAttemptsLeft(); return; }
+    location.reload();
+  });
 }
 
 function showQuestion() {
   if (current >= questions.length) { endGame(); return; }
-
   answered = false;
   const q = questions[current];
 
@@ -43,12 +77,8 @@ function showQuestion() {
   document.getElementById('q-text').textContent = q.question;
   document.getElementById('q-timer').textContent = TIME_PER_Q;
   document.getElementById('q-timer').classList.remove('timer-urgent');
+  document.getElementById('progress-fill').style.width = `${(current / NUM_QUESTIONS) * 100}%`;
 
-  // Progress bar
-  const pct = ((current) / NUM_QUESTIONS) * 100;
-  document.getElementById('progress-fill').style.width = `${pct}%`;
-
-  // Render options
   const optionsEl = document.getElementById('q-options');
   optionsEl.innerHTML = '';
   q.options.forEach((opt, i) => {
@@ -59,7 +89,6 @@ function showQuestion() {
     optionsEl.appendChild(btn);
   });
 
-  // Start per-question timer
   qTimeLeft = TIME_PER_Q;
   clearInterval(qTimer);
   qTimer = setInterval(() => {
@@ -67,10 +96,7 @@ function showQuestion() {
     totalTime++;
     document.getElementById('q-timer').textContent = qTimeLeft;
     if (qTimeLeft <= 3) document.getElementById('q-timer').classList.add('timer-urgent');
-    if (qTimeLeft <= 0) {
-      clearInterval(qTimer);
-      selectAnswer(-1); // timeout = wrong
-    }
+    if (qTimeLeft <= 0) { clearInterval(qTimer); selectAnswer(-1); }
   }, 1000);
 }
 
@@ -81,8 +107,6 @@ function selectAnswer(idx) {
 
   const q = questions[current];
   const buttons = document.querySelectorAll('.option-btn');
-
-  // Highlight correct/wrong
   buttons.forEach((btn, i) => {
     btn.disabled = true;
     if (i === q.answer) btn.classList.add('opt-correct');
@@ -90,15 +114,9 @@ function selectAnswer(idx) {
   });
 
   if (idx === q.answer) correct++;
-
-  // Update score display
   document.getElementById('score-live').textContent = correct;
 
-  // Next question after delay
-  setTimeout(() => {
-    current++;
-    showQuestion();
-  }, 1200);
+  setTimeout(() => { current++; showQuestion(); }, 1200);
 }
 
 async function endGame() {
@@ -107,48 +125,27 @@ async function endGame() {
   clearInterval(qTimer);
 
   const score = Math.max(0, Math.floor((correct / NUM_QUESTIONS) * 1000 - totalTime));
+  attemptScores.push(score);
+  const best = Math.max(...attemptScores);
 
-  // Final progress bar
   document.getElementById('progress-fill').style.width = '100%';
-
-  // Hide question area, show results
   document.getElementById('quiz-area').hidden = true;
   document.getElementById('results-section').hidden = false;
   document.getElementById('res-correct').textContent = `${correct}/${NUM_QUESTIONS}`;
   document.getElementById('res-time').textContent = `${totalTime}s`;
   document.getElementById('res-score').textContent = score;
+  document.getElementById('res-title-text').textContent = 'GAME OVER';
   document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
 
   await submitScore({
-    usn: player.usn, game: 'quiz', score,
-    meta: { correct, total: NUM_QUESTIONS, timeTaken: totalTime },
+    usn: player.team_name, game: 'quiz', score: best,
+    meta: { correct, total: NUM_QUESTIONS, timeTaken: totalTime, attemptScores: [...attemptScores] },
   });
-}
 
-async function showLeaderboard() {
-  const section = document.getElementById('lb-section');
-  const loading = document.getElementById('lb-loading');
-  section.hidden = false;
-  loading.hidden = false;
-  section.scrollIntoView({ behavior: 'smooth' });
-
-  const rows = await loadLeaderboard('quiz');
-  loading.hidden = true;
-  const tbody = document.getElementById('lb-body');
-
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted)">No scores yet.</td></tr>';
-    return;
+  attemptInfo = await getAttemptInfo(player.team_name, 'quiz', BASE_ATTEMPTS);
+  updateAttemptDisplay();
+  if (attemptInfo.remaining <= 0) {
+    const btn = document.getElementById('play-again-btn');
+    if (btn) btn.style.display = 'none';
   }
-  tbody.innerHTML = rows.map(row => `
-    <tr class="${row.usn === player.usn ? 'lb-mine' : ''}">
-      <td class="lb-rank">${row.rank}</td>
-      <td>${escHtml(row.username)}</td>
-      <td class="lb-usn">${escHtml(row.usn)}</td>
-      <td class="lb-score">${row.score}</td>
-    </tr>`).join('');
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }

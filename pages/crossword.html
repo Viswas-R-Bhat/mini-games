@@ -357,95 +357,69 @@
 <body>
 <div class="page">
 
-  <!-- Header -->
   <header>
-    <a class="back-link" href="../index.html">Games</a>
-    <span class="site-tag">MiniGames · VarAInce</span>
+    <a class="back-link" href="../games_list.html">Games</a>
+    <span class="site-tag">ReAIvive · VarAInce</span>
   </header>
 
-  <!-- Hero -->
   <div class="hero">
-    <p class="hero-eyebrow">Game 02 · Score for accuracy</p>
+    <p class="hero-eyebrow">Game 05 · 3 Puzzles · Sequential</p>
     <h1>CROSS<span>WORD</span></h1>
-    <p class="hero-sub">Click a clue or a cell to begin. Type your answers, Tab to cycle clues, Backspace to erase.</p>
+    <p class="hero-sub">3 puzzles — 1 Easy, 2 Hard. Complete each to unlock the next. Score = accuracy × 1000 − time.</p>
   </div>
 
-  <!-- HUD -->
-  <div class="hud">
-    <div id="timer" class="hud-timer">00:00</div>
-    <div class="hud-divider"></div>
-    <span class="hud-label">Score = accuracy × 1000 − time</span>
-    <button id="check-btn" class="btn btn-primary" style="margin-left:auto">Check Answers</button>
-    <div class="hud-hint">
-      <span class="hud-dot"></span>
-      Timer starts on first keypress
-    </div>
+  <!-- Puzzle Select -->
+  <div id="puzzle-select">
+    <div id="puzzle-buttons" style="display:grid;gap:.75rem;margin-bottom:1.5rem"></div>
   </div>
+  <style>
+    .puzzle-btn{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.5rem;cursor:pointer;display:flex;align-items:center;gap:1rem;transition:all .2s;text-align:left;width:100%;color:var(--text);font-family:var(--ff-body)}
+    .puzzle-btn:hover:not(.locked){border-color:var(--primary);transform:translateY(-2px)}
+    .puzzle-btn.locked{opacity:.4;cursor:not-allowed}
+    .puzzle-btn.completed{border-color:rgba(79,255,176,.3);background:rgba(79,255,176,.03)}
+    .puzzle-num{font-family:var(--ff-display);font-size:2rem;color:var(--muted);min-width:40px;text-align:center}
+    .puzzle-info{flex:1;display:flex;flex-direction:column;gap:.2rem}
+    .puzzle-title{font-family:var(--ff-display);font-size:1.2rem;letter-spacing:.05em}
+    .puzzle-diff{font-family:var(--ff-mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase}
+    .diff-easy{color:var(--primary)}.diff-hard{color:#ff4757}
+    .puzzle-status{font-family:var(--ff-mono);font-size:.75rem;color:var(--primary)}
+    .puzzle-btn.locked .puzzle-status{color:var(--muted)}
+  </style>
 
-  <!-- Game layout: grid + clues -->
-  <div class="game-layout">
-
-    <!-- Grid -->
-    <div class="grid-wrap">
-      <div id="crossword-grid"></div>
+  <!-- Crossword Area (hidden until puzzle selected) -->
+  <div id="crossword-area" hidden>
+    <div class="hud">
+      <div id="timer" class="hud-timer">00:00</div>
+      <div class="hud-divider"></div>
+      <span class="hud-label" id="puzzle-name">—</span>
+      <button id="check-btn" class="btn btn-primary" style="margin-left:auto">Check Answers</button>
+      <div class="hud-hint"><span class="hud-dot"></span>Timer starts on first keypress</div>
     </div>
 
-    <!-- Clue panels -->
-    <div class="clues-wrap">
-      <div class="clue-panel">
-        <div class="clue-panel-head">ACROSS</div>
-        <ul class="clue-list" id="clues-across"></ul>
+    <button id="back-to-puzzles" class="btn btn-outline" style="margin-bottom:1rem;font-size:.85rem">← Back to Puzzles</button>
+
+    <div class="game-layout">
+      <div class="grid-wrap"><div id="crossword-grid"></div></div>
+      <div class="clues-wrap">
+        <div class="clue-panel"><div class="clue-panel-head">ACROSS</div><ul class="clue-list" id="clues-across"></ul></div>
+        <div class="clue-panel"><div class="clue-panel-head">DOWN</div><ul class="clue-list" id="clues-down"></ul></div>
       </div>
-      <div class="clue-panel">
-        <div class="clue-panel-head">DOWN</div>
-        <ul class="clue-list" id="clues-down"></ul>
-      </div>
     </div>
-
   </div>
 
-  <!-- Results -->
   <section id="results-section" hidden>
-    <p class="res-title">RESULTS</p>
+    <p class="res-title">PUZZLE COMPLETE</p>
     <div class="res-grid">
-      <div class="res-card">
-        <div class="res-val hi"><span id="res-correct">0</span>/<span id="res-total">0</span></div>
-        <div class="res-label">Letters Correct</div>
-      </div>
-      <div class="res-card">
-        <div id="res-score" class="res-val hi">0</div>
-        <div class="res-label">Final Score</div>
-      </div>
-      <div class="res-card">
-        <div id="res-time" class="res-val">00:00</div>
-        <div class="res-label">Time Taken</div>
-      </div>
+      <div class="res-card"><div class="res-val hi"><span id="res-correct">0</span>/<span id="res-total">0</span></div><div class="res-label">Letters Correct</div></div>
+      <div class="res-card"><div id="res-score" class="res-val hi">0</div><div class="res-label">Score</div></div>
+      <div class="res-card"><div id="res-time" class="res-val">00:00</div><div class="res-label">Time</div></div>
     </div>
     <div class="res-actions">
-      <button id="view-lb-btn"    class="btn btn-primary">View Leaderboard</button>
-      <button id="play-again-btn" class="btn btn-outline">Play Again</button>
+      <button id="play-again-btn" class="btn btn-primary">Next Puzzle →</button>
     </div>
-  </section>
-
-  <!-- Leaderboard -->
-  <section id="lb-section" hidden>
-    <div class="lb-header">
-      <span class="lb-header-title">LEADERBOARD</span>
-      <span class="lb-badge">Crossword</span>
-    </div>
-    <p id="lb-loading" hidden>Fetching scores…</p>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th><th>Player</th><th>USN</th><th style="text-align:right">Score</th>
-        </tr>
-      </thead>
-      <tbody id="lb-body"></tbody>
-    </table>
   </section>
 
 </div>
-
 <script type="module" src="../games/crossword.js"></script>
 </body>
 </html>

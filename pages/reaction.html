@@ -98,13 +98,13 @@
 <body>
 <div class="page">
   <header>
-    <a class="back-link" href="../index.html">Games</a>
-    <span class="site-tag">MiniGames · VarAInce</span>
+    <a class="back-link" href="../games_list.html">Games</a>
+    <span class="site-tag">ReAIvive · VarAInce</span>
   </header>
   <div class="hero">
-    <p class="hero-eyebrow">Game 03 · 7 Rounds</p>
+    <p class="hero-eyebrow">Game 02 · 7 Rounds · 3 Attempts</p>
     <h1>REACTION<br/><span>TIME</span></h1>
-    <p class="hero-sub">Wait for green, click instantly. Fake-outs will trick you. Early clicks add 1000ms penalty.</p>
+    <p class="hero-sub">Wait for green, click instantly. 3 attempts, all scores averaged.</p>
   </div>
 
   <div class="hud">
@@ -113,6 +113,8 @@
     <div class="hud-stat"><div id="last-time" class="hud-stat-val">—</div><div class="hud-stat-label">Last</div></div>
     <div class="hud-divider"></div>
     <div class="hud-stat"><div id="avg-time" class="hud-stat-val">—</div><div class="hud-stat-label">Average</div></div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat"><div id="attempt-display" class="hud-stat-val" style="font-size:1rem;color:var(--warn)">—</div><div class="hud-stat-label">Attempt</div></div>
   </div>
 
   <div id="instruction"><span class="dot"></span>Click the box below to begin</div>
@@ -126,19 +128,12 @@
     <div class="res-grid">
       <div class="res-card"><div id="res-avg" class="res-val hi">0ms</div><div class="res-label">Avg Reaction</div></div>
       <div class="res-card"><div id="res-fastest" class="res-val">0ms</div><div class="res-label">Fastest</div></div>
-      <div class="res-card"><div id="res-score" class="res-val hi">0</div><div class="res-label">Final Score</div></div>
-      <div class="res-card"><div id="res-best" class="res-val">—</div><div class="res-label">Your Best</div></div>
+      <div class="res-card"><div id="res-score" class="res-val hi">0</div><div class="res-label">This Attempt</div></div>
+      <div class="res-card"><div id="res-best" class="res-val">—</div><div class="res-label">All Attempts Avg</div></div>
     </div>
     <div class="res-actions">
-      <button id="view-lb-btn" class="btn btn-primary">View Leaderboard</button>
-      <button id="play-again-btn" class="btn btn-outline">Play Again</button>
+      <button id="play-again-btn" class="btn btn-primary">Next Attempt →</button>
     </div>
-  </section>
-
-  <section id="lb-section" hidden>
-    <div class="lb-header"><span class="lb-header-title">LEADERBOARD</span><span class="lb-badge">Reaction</span></div>
-    <p id="lb-loading" hidden>Fetching scores…</p>
-    <table><thead><tr><th>#</th><th>Player</th><th>USN</th><th style="text-align:right">Score</th></tr></thead><tbody id="lb-body"></tbody></table>
   </section>
 </div>
 <script type="module" src="../games/reaction.js"></script>

@@ -2,6 +2,8 @@
   "outputDirectory": ".",
   "buildCommand": "",
   "rewrites": [
+    { "source": "/games",     "destination": "/games_list.html" },
+    { "source": "/admin",     "destination": "/pages/admin.html" },
     { "source": "/typing",    "destination": "/pages/typing.html" },
     { "source": "/crossword", "destination": "/pages/crossword.html" },
     { "source": "/reaction",  "destination": "/pages/reaction.html" },

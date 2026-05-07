@@ -1,9 +1,6 @@
-// /games/debug.js — ENGINE ONLY — Find the bug, 5 rounds, multi-language.
+// /games/debug.js — Find bugs in C, C++, Python. Mixed difficulty, weighted points.
 import { initPlayer, submitScore } from '../lib/submitScore.js';
-import { loadLeaderboard }         from '../lib/leaderboard.js';
 import { snippets as allSnippets } from '../data/debug.js';
-
-const NUM_ROUNDS = 5;
 
 let player = null;
 let snippets = [];
@@ -15,38 +12,66 @@ let timerInterval = null;
 let timerRunning = false;
 let selectedLine = -1;
 let finished = false;
-let roundPhase = 'select'; // select | fix | result
+let roundPhase = 'select';
 
 document.addEventListener('DOMContentLoaded', async () => {
   player = await initPlayer();
-  const shuffled = [...allSnippets].sort(() => Math.random() - 0.5);
-  snippets = shuffled.slice(0, NUM_ROUNDS);
+  // Show ALL snippets — player can solve any, order by difficulty
+  snippets = [...allSnippets].sort((a, b) => {
+    const order = { easy: 0, medium: 1, hard: 2 };
+    return order[a.difficulty] - order[b.difficulty];
+  });
   attachListeners();
-  showRound();
+  renderSnippetList();
+  startTimer();
 });
 
 function attachListeners() {
   document.getElementById('submit-fix').addEventListener('click', submitFix);
-  document.getElementById('next-round').addEventListener('click', nextRound);
-  document.getElementById('view-lb-btn').addEventListener('click', showLeaderboard);
-  document.getElementById('play-again-btn').addEventListener('click', () => location.reload());
+  document.getElementById('play-again-btn')?.addEventListener('click', () => location.reload());
 }
 
-function showRound() {
-  if (current >= snippets.length) { endGame(); return; }
+function renderSnippetList() {
+  const listEl = document.getElementById('snippet-list');
+  if (!listEl) { showRound(0); return; }
 
+  listEl.innerHTML = '';
+  snippets.forEach((snip, i) => {
+    const div = document.createElement('div');
+    div.className = `snippet-card difficulty-${snip.difficulty}`;
+    div.dataset.idx = i;
+    div.innerHTML = `
+      <div class="snippet-card-header">
+        <span class="snippet-difficulty diff-${snip.difficulty}">${snip.difficulty.toUpperCase()}</span>
+        <span class="snippet-lang">${snip.language.toUpperCase()}</span>
+        <span class="snippet-pts">${snip.points} pts</span>
+      </div>
+      <div class="snippet-card-title">${snip.title}</div>
+      <div class="snippet-card-status" id="status-${i}">UNSOLVED</div>
+    `;
+    div.addEventListener('click', () => showRound(i));
+    listEl.appendChild(div);
+  });
+
+  document.getElementById('total-available').textContent =
+    snippets.reduce((s, q) => s + q.points, 0);
+}
+
+function showRound(idx) {
+  current = idx;
   const snip = snippets[current];
   roundPhase = 'select';
   selectedLine = -1;
 
-  document.getElementById('round-num').textContent = `${current + 1}/${NUM_ROUNDS}`;
   document.getElementById('snippet-title').textContent = snip.title;
   document.getElementById('snippet-lang').textContent = snip.language.toUpperCase();
+  document.getElementById('snippet-difficulty').textContent = snip.difficulty.toUpperCase();
+  document.getElementById('snippet-difficulty').className = `diff-badge diff-${snip.difficulty}`;
+  document.getElementById('snippet-points').textContent = `${snip.points} pts`;
   document.getElementById('fix-area').hidden = true;
   document.getElementById('round-result').hidden = true;
   document.getElementById('instruction-text').textContent = 'Click the line that contains the bug';
 
-  // Render code
   const codeEl = document.getElementById('code-display');
   codeEl.innerHTML = '';
   snip.code.forEach((line, i) => {
@@ -58,19 +83,17 @@ function showRound() {
     codeEl.appendChild(div);
   });
 
-  startTimer();
+  // Show debug area
+  document.getElementById('debug-area').hidden = false;
+  document.getElementById('results-section').hidden = true;
 }
 
 function onLineClick(lineIdx) {
   if (roundPhase !== 'select') return;
-
-  // Clear previous selection
   document.querySelectorAll('.code-line').forEach(el => el.classList.remove('line-selected'));
-
   selectedLine = lineIdx;
   document.querySelectorAll('.code-line')[lineIdx].classList.add('line-selected');
 
-  // Show fix input
   roundPhase = 'fix';
   document.getElementById('fix-area').hidden = false;
   document.getElementById('fix-input').value = '';
@@ -87,18 +110,16 @@ function submitFix() {
   const correctLine = snip.bugLine === selectedLine;
   const fixInput = document.getElementById('fix-input').value.trim();
 
-  // Score: 100 for correct line, 100 for correct fix (partial credit)
   let roundScore = 0;
   let feedback = '';
 
   if (correctLine) {
-    roundScore += 100;
+    roundScore += Math.floor(snip.points * 0.5); // 50% for correct line
     feedback = '✓ Correct line identified! ';
 
-    // Check fix — normalize whitespace for comparison
     const normalize = s => s.replace(/\s+/g, ' ').trim().toLowerCase();
     if (normalize(fixInput) === normalize(snip.fixedCode)) {
-      roundScore += 100;
+      roundScore += Math.floor(snip.points * 0.5); // 50% for correct fix
       feedback += '✓ Perfect fix!';
     } else {
       feedback += '✗ Fix was incorrect.';
@@ -110,25 +131,33 @@ function submitFix() {
   score += roundScore;
   document.getElementById('score-live').textContent = score;
 
-  // Show result
+  // Update snippet card status
+  const statusEl = document.getElementById(`status-${current}`);
+  if (statusEl) {
+    statusEl.textContent = roundScore > 0 ? `+${roundScore}` : 'WRONG';
+    statusEl.className = `snippet-card-status ${roundScore > 0 ? 'solved' : 'failed'}`;
+  }
+
   const resultEl = document.getElementById('round-result');
   resultEl.hidden = false;
   document.getElementById('round-feedback').textContent = feedback;
   document.getElementById('round-hint').textContent = `Hint: ${snip.hint}`;
   document.getElementById('correct-fix').textContent = snip.fixedCode;
+  document.getElementById('round-pts').textContent = `+${roundScore} pts (${snip.difficulty})`;
 
-  // Highlight correct/wrong lines
   document.querySelectorAll('.code-line').forEach((el, i) => {
     if (i === snip.bugLine) el.classList.add('line-bug');
     if (i === selectedLine && selectedLine !== snip.bugLine) el.classList.add('line-wrong-pick');
   });
 
   document.getElementById('fix-area').hidden = true;
-}
 
-function nextRound() {
-  current++;
-  showRound();
+  // Mark snippet as done
+  snip._solved = true;
+
+  // Check if all solved
+  const allDone = snippets.every(s => s._solved);
+  if (allDone) setTimeout(() => endGame(), 1500);
 }
 
 function startTimer() {
@@ -142,7 +171,7 @@ function startTimer() {
 }
 
 function formatTime(s) {
-  return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
 async function endGame() {
@@ -160,35 +189,14 @@ async function endGame() {
   document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
 
   await submitScore({
-    usn: player.usn, game: 'debug', score: finalScore,
-    meta: { rawScore: score, timeTaken: totalTime, rounds: NUM_ROUNDS },
+    usn: player.team_name, game: 'debug', score: finalScore,
+    meta: { rawScore: score, timeTaken: totalTime, totalSnippets: snippets.length },
   });
 }
 
-async function showLeaderboard() {
-  const section = document.getElementById('lb-section');
-  const loading = document.getElementById('lb-loading');
-  section.hidden = false;
-  loading.hidden = false;
-  section.scrollIntoView({ behavior: 'smooth' });
-
-  const rows = await loadLeaderboard('debug');
-  loading.hidden = true;
-  const tbody = document.getElementById('lb-body');
-
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted)">No scores yet.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = rows.map(row => `
-    <tr class="${row.usn === player.usn ? 'lb-mine' : ''}">
-      <td class="lb-rank">${row.rank}</td>
-      <td>${escHtml(row.username)}</td>
-      <td class="lb-usn">${escHtml(row.usn)}</td>
-      <td class="lb-score">${row.score}</td>
-    </tr>`).join('');
-}
+// Add "Done / Submit" button handler
+document.getElementById('finish-btn')?.addEventListener('click', () => endGame());
 
 function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

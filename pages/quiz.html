@@ -78,13 +78,13 @@
 <body>
 <div class="page">
   <header>
-    <a class="back-link" href="../index.html">Games</a>
-    <span class="site-tag">MiniGames · VarAInce</span>
+    <a class="back-link" href="../games_list.html">Games</a>
+    <span class="site-tag">ReAIvive · VarAInce</span>
   </header>
   <div class="hero">
-    <p class="hero-eyebrow">Game 05 · 10 Questions · 10s Each</p>
+    <p class="hero-eyebrow">Game 04 · 10 Questions · 3 Attempts</p>
     <h1>CS<br/><span>QUIZ</span></h1>
-    <p class="hero-sub">Deep CS questions — DSA, OS, Networking, Databases. 10 seconds per question. No mercy.</p>
+    <p class="hero-sub">Deep CS questions — DSA, OS, Networking, Databases. 10s per question. 3 attempts, best score kept.</p>
   </div>
 
   <div class="hud">
@@ -93,6 +93,8 @@
     <div class="hud-stat"><div id="q-progress" class="hud-stat-val">1/10</div><div class="hud-stat-label">Question</div></div>
     <div class="hud-divider"></div>
     <div class="hud-stat"><div id="score-live" class="hud-stat-val">0</div><div class="hud-stat-label">Correct</div></div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat"><div id="attempt-display" class="hud-stat-val" style="font-size:1rem;color:var(--warn)">—</div><div class="hud-stat-label">Attempt</div></div>
   </div>
 
   <div class="progress-bar"><div id="progress-fill"></div></div>
@@ -106,22 +108,15 @@
   </div>
 
   <section id="results-section" hidden>
-    <p class="res-title">QUIZ COMPLETE</p>
+    <p class="res-title" id="res-title-text">QUIZ COMPLETE</p>
     <div class="res-grid">
       <div class="res-card"><div id="res-correct" class="res-val hi">0/10</div><div class="res-label">Correct</div></div>
       <div class="res-card"><div id="res-time" class="res-val">0s</div><div class="res-label">Total Time</div></div>
       <div class="res-card"><div id="res-score" class="res-val hi">0</div><div class="res-label">Score</div></div>
     </div>
     <div class="res-actions">
-      <button id="view-lb-btn" class="btn btn-primary">View Leaderboard</button>
-      <button id="play-again-btn" class="btn btn-outline">Play Again</button>
+      <button id="play-again-btn" class="btn btn-primary">Next Attempt →</button>
     </div>
-  </section>
-
-  <section id="lb-section" hidden>
-    <div class="lb-header"><span class="lb-header-title">LEADERBOARD</span><span class="lb-badge">Quiz</span></div>
-    <p id="lb-loading" hidden>Fetching scores…</p>
-    <table><thead><tr><th>#</th><th>Player</th><th>USN</th><th style="text-align:right">Score</th></tr></thead><tbody id="lb-body"></tbody></table>
   </section>
 </div>
 <script type="module" src="../games/quiz.js"></script>

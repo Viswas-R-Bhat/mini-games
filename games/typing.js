@@ -1,6 +1,4 @@
-import { initPlayer }   from '../lib/submitScore.js';
-import { submitScore }  from '../lib/submitScore.js';
-import { loadLeaderboard } from '../lib/leaderboard.js';
+import { initPlayer, submitScore, getAttemptInfo } from '../lib/submitScore.js';
 
 // ── Paragraph pool ────────────────────────────────────────────────────────────
 const paragraphs = [
@@ -16,96 +14,135 @@ const paragraphs = [
   "Open source software powers a vast portion of the modern internet, from the Linux kernel running on servers to the frameworks developers use every day to build websites and mobile applications.",
 ];
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-const GAME_DURATION = 30; // seconds
+const GAME_DURATION = 30;
+const BASE_ATTEMPTS = 5;
+const BEST_OF = 3;
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let player       = null;
-let paragraph    = '';
-let timerValue   = GAME_DURATION;
-let timerHandle  = null;
-let gameStarted  = false;
-let gameOver     = false;
+let player = null;
+let paragraph = '';
+let timerValue = GAME_DURATION;
+let timerHandle = null;
+let gameStarted = false;
+let gameOver = false;
+let attemptScores = []; // scores from all attempts this session
+let attemptInfo = null;
 
-// ── DOM refs (populated after DOMContentLoaded) ───────────────────────────────
 let paraDisplay, textarea, timerEl;
 let statWpm, statAcc, statChars;
 let resultsSection, resWpm, resAcc, resScore, resBest;
-let lbSection, lbBody, lbLoading;
-let startHint, viewLbBtn, playAgainBtn;
+let startHint, playAgainBtn;
+let attemptDisplay;
 
-// ── Bootstrap ─────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   grabDOMRefs();
-  player    = await initPlayer();
-  paragraph = paragraphs[Math.floor(Math.random() * paragraphs.length)];
+  player = await initPlayer();
+  attemptInfo = await getAttemptInfo(player.team_name, 'typing', BASE_ATTEMPTS);
 
+  // Load previous attempt scores from Supabase
+  await loadPreviousAttempts();
+
+  if (attemptInfo.remaining <= 0) {
+    showNoAttemptsLeft();
+    return;
+  }
+
+  paragraph = paragraphs[Math.floor(Math.random() * paragraphs.length)];
   renderParagraph();
   resetUI();
   attachListeners();
+  updateAttemptDisplay();
 });
 
-// ── DOM helpers ───────────────────────────────────────────────────────────────
 function grabDOMRefs() {
-  paraDisplay  = document.getElementById('para-display');
-  textarea     = document.getElementById('typing-area');
-  timerEl      = document.getElementById('timer');
-  statWpm      = document.getElementById('stat-wpm');
-  statAcc      = document.getElementById('stat-acc');
-  statChars    = document.getElementById('stat-chars');
+  paraDisplay = document.getElementById('para-display');
+  textarea = document.getElementById('typing-area');
+  timerEl = document.getElementById('timer');
+  statWpm = document.getElementById('stat-wpm');
+  statAcc = document.getElementById('stat-acc');
+  statChars = document.getElementById('stat-chars');
   resultsSection = document.getElementById('results-section');
-  resWpm       = document.getElementById('res-wpm');
-  resAcc       = document.getElementById('res-acc');
-  resScore     = document.getElementById('res-score');
-  resBest      = document.getElementById('res-best');
-  lbSection    = document.getElementById('lb-section');
-  lbBody       = document.getElementById('lb-body');
-  lbLoading    = document.getElementById('lb-loading');
-  startHint    = document.getElementById('start-hint');
-  viewLbBtn    = document.getElementById('view-lb-btn');
+  resWpm = document.getElementById('res-wpm');
+  resAcc = document.getElementById('res-acc');
+  resScore = document.getElementById('res-score');
+  resBest = document.getElementById('res-best');
+  startHint = document.getElementById('start-hint');
   playAgainBtn = document.getElementById('play-again-btn');
+  attemptDisplay = document.getElementById('attempt-display');
 }
 
-// Render paragraph as individual <span> elements (one per char)
+async function loadPreviousAttempts() {
+  const { data } = await (await import('../lib/supabaseClient.js')).supabase
+    .from('attempt_logs')
+    .select('score')
+    .eq('team_name', player.team_name)
+    .eq('game', 'typing')
+    .order('created_at', { ascending: true });
+
+  attemptScores = (data || []).map(r => r.score);
+}
+
+function updateAttemptDisplay() {
+  if (!attemptDisplay) return;
+  const used = attemptInfo.used + (attemptScores.length - attemptInfo.used);
+  attemptDisplay.textContent = `Attempt ${Math.min(used + 1, attemptInfo.allowed)} / ${attemptInfo.allowed}`;
+}
+
+function showNoAttemptsLeft() {
+  if (paraDisplay) paraDisplay.innerHTML = '';
+  if (textarea) { textarea.disabled = true; textarea.placeholder = 'No attempts remaining.'; }
+  if (startHint) startHint.hidden = true;
+
+  const best3 = getBest3Score();
+  resultsSection.hidden = false;
+  resWpm.textContent = '—';
+  resAcc.textContent = '—';
+  resScore.textContent = best3;
+  resBest.textContent = `Best 3 of ${attemptScores.length}`;
+  if (playAgainBtn) playAgainBtn.style.display = 'none';
+
+  document.getElementById('res-title-text').textContent = 'ALL ATTEMPTS USED';
+}
+
+function getBest3Score() {
+  if (attemptScores.length === 0) return 0;
+  const sorted = [...attemptScores].sort((a, b) => b - a);
+  const best = sorted.slice(0, BEST_OF);
+  return Math.round(best.reduce((a, b) => a + b, 0) / best.length);
+}
+
 function renderParagraph() {
   paraDisplay.innerHTML = '';
   [...paragraph].forEach((ch, i) => {
     const span = document.createElement('span');
     span.dataset.index = i;
-    span.textContent   = ch;
-    span.className     = 'char-untouched';
+    span.textContent = ch;
+    span.className = 'char-untouched';
     paraDisplay.appendChild(span);
   });
 }
 
 function resetUI() {
-  timerEl.textContent   = GAME_DURATION;
+  timerEl.textContent = GAME_DURATION;
   timerEl.classList.remove('timer-urgent');
-  textarea.value        = '';
-  textarea.disabled     = false;
-  startHint.hidden      = false;
+  textarea.value = '';
+  textarea.disabled = false;
+  startHint.hidden = false;
   resultsSection.hidden = true;
-  lbSection.hidden      = true;
-  statWpm.textContent   = '0';
-  statAcc.textContent   = '0';
+  statWpm.textContent = '0';
+  statAcc.textContent = '0';
   statChars.textContent = '0';
-
   gameStarted = false;
-  gameOver    = false;
-  timerValue  = GAME_DURATION;
+  gameOver = false;
+  timerValue = GAME_DURATION;
 }
 
-// ── Event listeners ───────────────────────────────────────────────────────────
 function attachListeners() {
-  // Anti-cheat: block copy / paste / right-click
-  textarea.addEventListener('copy',       (e) => e.preventDefault());
-  textarea.addEventListener('cut',        (e) => e.preventDefault());
-  textarea.addEventListener('contextmenu',(e) => e.preventDefault());
-  textarea.addEventListener('paste',      handlePaste);
-  textarea.addEventListener('input',      handleInput);
-  textarea.addEventListener('keydown',    handleKeydown);
-
-  viewLbBtn.addEventListener('click',  showLeaderboard);
+  textarea.addEventListener('copy', e => e.preventDefault());
+  textarea.addEventListener('cut', e => e.preventDefault());
+  textarea.addEventListener('contextmenu', e => e.preventDefault());
+  textarea.addEventListener('paste', handlePaste);
+  textarea.addEventListener('input', handleInput);
+  textarea.addEventListener('keydown', handleKeydown);
   playAgainBtn.addEventListener('click', restartGame);
 }
 
@@ -116,21 +153,18 @@ function handleKeydown(e) {
 
 function handlePaste(e) {
   e.preventDefault();
-  endGame(true); // penalty: score = 0
+  endGame(true);
 }
 
 function handleInput() {
-  if (gameOver) return;
-  if (!gameStarted) return; // shouldn't fire before keydown, but guard anyway
+  if (gameOver || !gameStarted) return;
   updateDisplay();
   updateLiveStats();
 }
 
-// ── Game lifecycle ────────────────────────────────────────────────────────────
 function startGame() {
   gameStarted = true;
   startHint.hidden = true;
-
   timerHandle = setInterval(() => {
     timerValue--;
     timerEl.textContent = timerValue;
@@ -142,50 +176,59 @@ function startGame() {
 async function endGame(cheated = false) {
   if (gameOver) return;
   gameOver = true;
-
   clearInterval(timerHandle);
-  timerHandle = null;
   textarea.disabled = true;
 
-  const typed   = textarea.value;
+  const typed = textarea.value;
   const metrics = computeMetrics(typed, cheated);
 
-  showResults(metrics);
+  attemptScores.push(metrics.score);
+  const best3 = getBest3Score();
+
+  showResults(metrics, best3);
 
   await submitScore({
-    usn:   player.usn,
-    game:  'typing',
-    score: metrics.score,
-    meta:  {
-      wpm:             metrics.wpm,
-      accuracy:        metrics.accuracy,
-      timeTaken:       GAME_DURATION,
-      paragraphLength: paragraph.length,
+    usn: player.team_name,
+    game: 'typing',
+    score: best3,
+    meta: {
+      wpm: metrics.wpm,
+      accuracy: metrics.accuracy,
+      timeTaken: GAME_DURATION,
+      attemptScore: metrics.score,
+      attemptScores: [...attemptScores],
     },
   });
+
+  // Refresh attempt info
+  attemptInfo = await getAttemptInfo(player.team_name, 'typing', BASE_ATTEMPTS);
+  updateAttemptDisplay();
+
+  if (attemptInfo.remaining <= 0 && playAgainBtn) {
+    playAgainBtn.style.display = 'none';
+  }
 }
 
-function restartGame() {
+async function restartGame() {
+  attemptInfo = await getAttemptInfo(player.team_name, 'typing', BASE_ATTEMPTS);
+  if (attemptInfo.remaining <= 0) {
+    showNoAttemptsLeft();
+    return;
+  }
   clearInterval(timerHandle);
   paragraph = paragraphs[Math.floor(Math.random() * paragraphs.length)];
   renderParagraph();
   resetUI();
+  updateAttemptDisplay();
 }
 
-// ── Metrics ───────────────────────────────────────────────────────────────────
 function computeMetrics(typed, cheated) {
-  if (cheated || !typed.length) {
-    return { wpm: 0, accuracy: 0, score: 0, correctChars: 0, totalTyped: 0 };
-  }
-
-  const totalTyped    = typed.length;
-  const correctChars  = countCorrectChars(typed);
-  const accuracy      = totalTyped > 0
-    ? parseFloat(((correctChars / totalTyped) * 100).toFixed(1))
-    : 0;
-  const wpm           = parseFloat(((correctChars / 5) / (GAME_DURATION / 60)).toFixed(1));
-  const score         = Math.floor(wpm * (accuracy / 100));
-
+  if (cheated || !typed.length) return { wpm: 0, accuracy: 0, score: 0, correctChars: 0, totalTyped: 0 };
+  const totalTyped = typed.length;
+  const correctChars = countCorrectChars(typed);
+  const accuracy = parseFloat(((correctChars / totalTyped) * 100).toFixed(1));
+  const wpm = parseFloat(((correctChars / 5) / (GAME_DURATION / 60)).toFixed(1));
+  const score = Math.floor(wpm * (accuracy / 100));
   return { wpm, accuracy, score, correctChars, totalTyped };
 }
 
@@ -197,85 +240,31 @@ function countCorrectChars(typed) {
   return count;
 }
 
-// ── Live display ──────────────────────────────────────────────────────────────
 function updateDisplay() {
-  const typed  = textarea.value;
-  const spans  = paraDisplay.querySelectorAll('span');
-
+  const typed = textarea.value;
+  const spans = paraDisplay.querySelectorAll('span');
   spans.forEach((span, i) => {
-    if (i < typed.length) {
-      span.className = typed[i] === paragraph[i] ? 'char-correct' : 'char-wrong';
-    } else if (i === typed.length) {
-      span.className = 'char-cursor';
-    } else {
-      span.className = 'char-untouched';
-    }
+    if (i < typed.length) span.className = typed[i] === paragraph[i] ? 'char-correct' : 'char-wrong';
+    else if (i === typed.length) span.className = 'char-cursor';
+    else span.className = 'char-untouched';
   });
 }
 
 function updateLiveStats() {
-  const typed        = textarea.value;
-  const totalTyped   = typed.length;
+  const typed = textarea.value;
+  const totalTyped = typed.length;
   const correctChars = countCorrectChars(typed);
-  const elapsed      = GAME_DURATION - timerValue || 1;
-  const liveWpm      = totalTyped > 0
-    ? Math.round((correctChars / 5) / (elapsed / 60))
-    : 0;
-  const liveAcc      = totalTyped > 0
-    ? Math.round((correctChars / totalTyped) * 100)
-    : 0;
-
-  statWpm.textContent   = liveWpm;
-  statAcc.textContent   = liveAcc;
+  const elapsed = GAME_DURATION - timerValue || 1;
+  statWpm.textContent = totalTyped > 0 ? Math.round((correctChars / 5) / (elapsed / 60)) : 0;
+  statAcc.textContent = totalTyped > 0 ? Math.round((correctChars / totalTyped) * 100) : 0;
   statChars.textContent = correctChars;
 }
 
-// ── Results ───────────────────────────────────────────────────────────────────
-function showResults({ wpm, accuracy, score }) {
+function showResults({ wpm, accuracy, score }, best3) {
   resultsSection.hidden = false;
-  resWpm.textContent    = wpm;
-  resAcc.textContent    = accuracy + '%';
-  resScore.textContent  = score;
-  resBest.textContent   = '—';
-
-  // Async: check personal best from leaderboard data
-  loadLeaderboard('typing').then(rows => {
-    const mine = rows.find(r => r.usn === player.usn);
-    if (mine) resBest.textContent = mine.score;
-  });
-}
-
-// ── Leaderboard ───────────────────────────────────────────────────────────────
-async function showLeaderboard() {
-  lbSection.hidden  = false;
-  lbLoading.hidden  = false;
-  lbBody.innerHTML  = '';
-  viewLbBtn.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  const rows = await loadLeaderboard('typing');
-  lbLoading.hidden = true;
-
-  if (!rows.length) {
-    lbBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#6b7fa3">No scores yet.</td></tr>';
-    return;
-  }
-
-  rows.forEach(row => {
-    const tr = document.createElement('tr');
-    if (row.usn === player.usn) tr.classList.add('lb-mine');
-    tr.innerHTML = `
-      <td class="lb-rank">${row.rank}</td>
-      <td class="lb-name">${escHtml(row.username)}</td>
-      <td class="lb-usn">${escHtml(row.usn)}</td>
-      <td class="lb-score">${row.score}</td>
-    `;
-    lbBody.appendChild(tr);
-  });
-}
-
-// ── Utility ───────────────────────────────────────────────────────────────────
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  resWpm.textContent = wpm;
+  resAcc.textContent = accuracy + '%';
+  resScore.textContent = score;
+  resBest.textContent = best3 + ' (best 3 avg)';
+  document.getElementById('res-title-text').textContent = 'GAME OVER';
 }

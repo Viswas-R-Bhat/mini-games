@@ -3,555 +3,182 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MiniGames — BMSCE Tech Fest</title>
-
+  <title>ReAIvive — The AI Resurrection Challenge</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg:        #080b14;
-      --surface:   #0f1623;
-      --surface2:  #141d2e;
-      --border:    #1e2d45;
-      --border2:   #2a3f5f;
-      --primary:   #4fffb0;
-      --primary-d: #1fd98a;
-      --accent:    #ff6b35;
-      --accent2:   #ffd32a;
-      --text:      #e8eaf0;
-      --muted:     #6b7fa3;
-      --faint:     #1a2438;
-
-      --ff-display: 'Bebas Neue', 'Impact', sans-serif;
-      --ff-mono:    'JetBrains Mono', monospace;
-      --ff-body:    'Plus Jakarta Sans', sans-serif;
+      --bg: #04060b;
+      --surface: #0a0f1a;
+      --primary: #4fffb0;
+      --primary-glow: rgba(79, 255, 176, 0.3);
+      --accent: #ff6b35;
+      --text: #f0f2f5;
+      --muted: #8a99b0;
+      --border: #1a2438;
+      --ff-display: 'Bebas Neue', sans-serif;
+      --ff-body: 'Plus Jakarta Sans', sans-serif;
+      --ff-mono: 'JetBrains Mono', monospace;
     }
 
-    html { scroll-behavior: smooth; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background: var(--bg);
       color: var(--text);
       font-family: var(--ff-body);
       min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* ── Animated background ───────────────────────────────────────────────── */
-    body::before {
-      content: '';
-      position: fixed; inset: 0; z-index: 0;
-      background-image:
-        linear-gradient(rgba(79,255,176,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(79,255,176,0.025) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-    }
-
-    body::after {
-      content: '';
-      position: fixed;
-      top: -40%; left: -20%;
-      width: 70vw; height: 70vw;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(79,255,176,0.04) 0%, transparent 70%);
-      pointer-events: none; z-index: 0;
-    }
-
-    /* ── Page wrapper ──────────────────────────────────────────────────────── */
-    .page {
-      position: relative; z-index: 1;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 2rem 1.5rem 5rem;
-    }
-
-    /* ── Nav ───────────────────────────────────────────────────────────────── */
-    nav {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding-bottom: 1.25rem;
-      margin-bottom: 3rem;
-      border-bottom: 1px solid var(--border);
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
     }
 
-    .nav-logo {
-      font-family: var(--ff-display);
-      font-size: 1.4rem;
-      letter-spacing: 0.1em;
-      color: var(--primary);
-      text-decoration: none;
+    /* Animated Cyber Grid Background */
+    .bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 50px 50px;
+      mask-image: radial-gradient(circle at 50% 50%, black, transparent 80%);
+      z-index: 0;
+      animation: grid-move 20s linear infinite;
     }
 
-    .nav-tag {
-      font-family: var(--ff-mono);
-      font-size: 0.65rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--muted);
+    @keyframes grid-move {
+      from { background-position: 0 0; }
+      to { background-position: 50px 50px; }
     }
 
-    /* ── Hero ──────────────────────────────────────────────────────────────── */
-    .hero {
+    .glow {
+      position: absolute;
+      width: 60vw;
+      height: 60vw;
+      background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 1;
+      filter: blur(80px);
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 2rem;
+      max-width: 800px;
+      width: 100%;
+    }
+
+    .title-wrap {
       margin-bottom: 4rem;
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeUp 1s ease forwards;
     }
 
-    .hero-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-family: var(--ff-mono);
-      font-size: 0.7rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
+    .title {
+      font-family: var(--ff-display);
+      font-size: clamp(5rem, 15vw, 10rem);
+      line-height: 0.8;
+      letter-spacing: 0.05em;
       color: var(--primary);
+      text-shadow: 0 0 30px var(--primary-glow);
       margin-bottom: 1rem;
     }
-    .hero-kicker::before {
-      content: '';
-      display: block;
-      width: 24px; height: 1px;
-      background: var(--primary);
-    }
-    .hero-kicker::after {
-      content: '';
-      display: block;
-      width: 24px; height: 1px;
-      background: var(--primary);
-    }
 
-    .hero-title {
-      font-family: var(--ff-display);
-      font-size: clamp(3.5rem, 12vw, 7rem);
-      line-height: 0.92;
-      letter-spacing: 0.03em;
-      margin-bottom: 1.25rem;
-    }
-    .hero-title .line2 { color: var(--primary); }
-
-    .hero-desc {
-      max-width: 480px;
-      font-size: 0.95rem;
-      line-height: 1.7;
+    .subtitle {
+      font-family: var(--ff-mono);
+      font-size: clamp(0.9rem, 2.5vw, 1.4rem);
       color: var(--muted);
-      margin-bottom: 2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4em;
     }
 
-    .hero-stats {
+    .button-group {
       display: flex;
       gap: 2rem;
+      justify-content: center;
       flex-wrap: wrap;
-    }
-    .hero-stat-val {
-      font-family: var(--ff-display);
-      font-size: 2rem;
-      letter-spacing: 0.04em;
-      color: var(--text);
-    }
-    .hero-stat-label {
-      font-family: var(--ff-mono);
-      font-size: 0.6rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-top: 0.1rem;
+      opacity: 0;
+      animation: fadeIn 1s ease 0.5s forwards;
     }
 
-    /* ── Section header ────────────────────────────────────────────────────── */
-    .section-head {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-    }
-    .section-head-title {
+    .btn {
+      padding: 1.2rem 3rem;
       font-family: var(--ff-display);
       font-size: 1.5rem;
-      letter-spacing: 0.08em;
-      color: var(--text);
-    }
-    .section-head-line {
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
-
-    /* ── Game cards ────────────────────────────────────────────────────────── */
-    .games-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 4rem;
-    }
-
-    .game-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
+      letter-spacing: 0.1em;
       text-decoration: none;
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
+      border-radius: 4px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
-      transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
-    }
-    .game-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: var(--card-accent, var(--primary));
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: transform 0.3s ease;
-    }
-    .game-card:hover {
-      border-color: var(--border2);
-      transform: translateY(-3px);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-    }
-    .game-card:hover::before { transform: scaleX(1); }
-
-    /* Status badge */
-    .game-card-status {
-      position: absolute;
-      top: 1rem; right: 1rem;
-      font-family: var(--ff-mono);
-      font-size: 0.58rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      padding: 0.18rem 0.5rem;
-      border-radius: 4px;
-    }
-    .status-live {
-      background: rgba(79,255,176,0.12);
-      color: var(--primary);
-      border: 1px solid rgba(79,255,176,0.25);
-    }
-    .status-soon {
-      background: rgba(107,127,163,0.1);
-      color: var(--muted);
-      border: 1px solid var(--border);
+      min-width: 220px;
     }
 
-    .game-card-icon {
-      font-size: 2rem;
-      line-height: 1;
-    }
-
-    .game-card-name {
-      font-family: var(--ff-display);
-      font-size: 1.5rem;
-      letter-spacing: 0.05em;
-      color: var(--text);
-    }
-
-    .game-card-desc {
-      font-size: 0.82rem;
-      line-height: 1.55;
-      color: var(--muted);
-      flex: 1;
-    }
-
-    .game-card-meta {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-    .game-tag {
-      font-family: var(--ff-mono);
-      font-size: 0.6rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      background: var(--faint);
-      border-radius: 4px;
-      padding: 0.18rem 0.45rem;
-    }
-
-    .game-card-cta {
-      font-family: var(--ff-display);
-      font-size: 0.95rem;
-      letter-spacing: 0.08em;
-      color: var(--card-accent, var(--primary));
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-    }
-    .game-card-cta::after { content: '→'; }
-
-    /* Disabled card */
-    .game-card.disabled {
-      pointer-events: none;
-      opacity: 0.5;
-    }
-
-    /* ── Player info bar ───────────────────────────────────────────────────── */
-    #player-bar {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1rem 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 2.5rem;
-      flex-wrap: wrap;
-    }
-    #player-bar .pb-dot {
-      width: 8px; height: 8px; border-radius: 50%;
+    .btn-participant {
       background: var(--primary);
-      box-shadow: 0 0 8px var(--primary);
-      flex-shrink: 0;
+      color: var(--bg);
+      box-shadow: 0 0 20px var(--primary-glow);
     }
-    #player-bar .pb-label {
-      font-family: var(--ff-mono);
-      font-size: 0.7rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
+
+    .btn-participant:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0 40px var(--primary-glow);
     }
-    #player-bar .pb-name {
-      font-family: var(--ff-mono);
-      font-size: 0.88rem;
-      color: var(--text);
-      font-weight: 700;
-    }
-    #player-bar .pb-usn {
-      font-family: var(--ff-mono);
-      font-size: 0.75rem;
+
+    .btn-admin {
+      background: transparent;
       color: var(--primary);
+      border: 1px solid var(--primary);
     }
-    #player-bar .pb-sep { color: var(--border2); }
-    #player-bar .pb-reset {
-      margin-left: auto;
-      font-family: var(--ff-mono);
-      font-size: 0.65rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      padding: 0.25rem 0.6rem;
-      cursor: pointer;
-      transition: color 0.2s, border-color 0.2s;
-    }
-    #player-bar .pb-reset:hover { color: var(--accent); border-color: var(--accent); }
 
-    /* ── Footer ────────────────────────────────────────────────────────────── */
-    footer {
-      border-top: 1px solid var(--border);
-      padding-top: 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 0.75rem;
+    .btn-admin:hover {
+      background: rgba(79, 255, 176, 0.1);
+      transform: translateY(-5px);
     }
-    .footer-text {
-      font-family: var(--ff-mono);
-      font-size: 0.65rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .footer-text span { color: var(--primary); }
 
-    /* ── Responsive ────────────────────────────────────────────────────────── */
-    @media (max-width: 480px) {
-      .hero-stats { gap: 1.25rem; }
-      .games-grid { grid-template-columns: 1fr; }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    /* Scanline effect */
+    body::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      background-size: 100% 4px, 3px 100%;
+      pointer-events: none;
+      z-index: 100;
     }
   </style>
 </head>
 <body>
-<div class="page">
-
-  <!-- Nav -->
-  <nav>
-    <a class="nav-logo" href="#">MINIGAMES</a>
-    <span class="nav-tag">BMSCE · VarAInce</span>
-  </nav>
-
-  <!-- Hero -->
-  <section class="hero">
-    <p class="hero-kicker">Compete · Score · Dominate</p>
-    <h1 class="hero-title">
-      RACE THE<br/>
-      <span class="line2">CLOCK</span>
-    </h1>
-    <p class="hero-desc">
-      A collection of skill-based mini-games where every point counts.
-      One identity, one leaderboard per game — your best score stands.
-    </p>
-    <div class="hero-stats">
-      <div>
-        <div class="hero-stat-val">6</div>
-        <div class="hero-stat-label">Games</div>
-      </div>
-      <div>
-        <div class="hero-stat-val">∞</div>
-        <div class="hero-stat-label">Attempts</div>
-      </div>
-      <div>
-        <div class="hero-stat-val">1</div>
-        <div class="hero-stat-label">Best Score Kept</div>
-      </div>
+  <div class="bg-grid"></div>
+  <div class="glow"></div>
+  
+  <div class="container">
+    <div class="title-wrap">
+      <h1 class="title">REAI<span style="color: white;">VIVE</span></h1>
+      <p class="subtitle">The AI Resurrection Challenge</p>
     </div>
-  </section>
 
-  <!-- Player bar (shown after identity is set) -->
-  <div id="player-bar" hidden>
-    <span class="pb-dot"></span>
-    <span class="pb-label">Playing as</span>
-    <span class="pb-name" id="pb-name">—</span>
-    <span class="pb-sep">·</span>
-    <span class="pb-usn"  id="pb-usn">—</span>
-    <button class="pb-reset" id="pb-reset">Change player</button>
+    <div class="button-group">
+      <a href="games_list.html" class="btn btn-participant">PARTICIPANT</a>
+      <a href="pages/admin.html" class="btn btn-admin">ADMIN PANEL</a>
+    </div>
   </div>
-
-  <!-- Games grid -->
-  <div class="section-head">
-    <span class="section-head-title">GAMES</span>
-    <span class="section-head-line"></span>
-  </div>
-
-  <div class="games-grid">
-
-    <!-- Typing Speed — LIVE -->
-    <a class="game-card" href="pages/typing.html" style="--card-accent:#4fffb0">
-      <span class="game-card-status status-live">Live</span>
-      <div class="game-card-icon">⌨️</div>
-      <div class="game-card-name">TYPING SPEED</div>
-      <div class="game-card-desc">
-        Type a paragraph in 30 seconds. Score is WPM × Accuracy — pure muscle memory vs the clock.
-      </div>
-      <div class="game-card-meta">
-        <span class="game-tag">30s</span>
-        <span class="game-tag">Accuracy</span>
-        <span class="game-tag">WPM</span>
-      </div>
-      <div class="game-card-cta">Play now</div>
-    </a>
-
-    <!-- Reaction — LIVE -->
-    <a class="game-card" href="pages/reaction.html" style="--card-accent:#ff6b35">
-      <span class="game-card-status status-live">Live</span>
-      <div class="game-card-icon">⚡</div>
-      <div class="game-card-name">REACTION TIME</div>
-      <div class="game-card-desc">
-        Click the moment it turns green. 7 rounds with fake-outs — early clicks add 1000ms penalty.
-      </div>
-      <div class="game-card-meta">
-        <span class="game-tag">7 rounds</span>
-        <span class="game-tag">Fake-outs</span>
-        <span class="game-tag">Reflex</span>
-      </div>
-      <div class="game-card-cta">Play now</div>
-    </a>
-
-    <!-- Memory — LIVE -->
-    <a class="game-card" href="pages/memory.html" style="--card-accent:#a78bfa">
-      <span class="game-card-status status-live">Live</span>
-      <div class="game-card-icon">🧠</div>
-      <div class="game-card-name">MEMORY MATCH</div>
-      <div class="game-card-desc">
-        Match CS concept pairs on a 5×4 grid. 600ms reveal, 10 pairs — you need real memory.
-      </div>
-      <div class="game-card-meta">
-        <span class="game-tag">5×4 Grid</span>
-        <span class="game-tag">10 Pairs</span>
-        <span class="game-tag">Hard</span>
-      </div>
-      <div class="game-card-cta">Play now</div>
-    </a>
-
-    <!-- Quiz — LIVE -->
-    <a class="game-card" href="pages/quiz.html" style="--card-accent:#ffd32a">
-      <span class="game-card-status status-live">Live</span>
-      <div class="game-card-icon">❓</div>
-      <div class="game-card-name">CS QUIZ</div>
-      <div class="game-card-desc">
-        Deep CS questions — DSA, OS, Networking, Databases. 10 seconds per question. No mercy.
-      </div>
-      <div class="game-card-meta">
-        <span class="game-tag">10 Qs</span>
-        <span class="game-tag">10s Timer</span>
-        <span class="game-tag">Hard</span>
-      </div>
-      <div class="game-card-cta">Play now</div>
-    </a>
-
-    <!-- Crossword — LIVE -->
-    <a class="game-card" href="pages/crossword.html" style="--card-accent:#fb7185">
-      <span class="game-card-status status-live">Live</span>
-      <div class="game-card-icon">📰</div>
-      <div class="game-card-name">CROSSWORD</div>
-      <div class="game-card-desc">
-        Tech-themed crossword. Solve every clue against the clock. Score = accuracy × 1000 − time.
-      </div>
-      <div class="game-card-meta">
-        <span class="game-tag">Grid</span>
-        <span class="game-tag">Accuracy</span>
-        <span class="game-tag">Vocab</span>
-      </div>
-      <div class="game-card-cta">Play now</div>
-    </a>
-
-    <!-- Code Debug — LIVE -->
-    <a class="game-card" href="pages/debug.html" style="--card-accent:#38bdf8">
-      <span class="game-card-status status-live">Live</span>
-      <div class="game-card-icon">🐛</div>
-      <div class="game-card-name">CODE DEBUG</div>
-      <div class="game-card-desc">
-        Find the bug, click the line, type the fix. Subtle logic errors across JS, Python, and C.
-      </div>
-      <div class="game-card-meta">
-        <span class="game-tag">5 Rounds</span>
-        <span class="game-tag">Multi-Lang</span>
-        <span class="game-tag">Hard</span>
-      </div>
-      <div class="game-card-cta">Play now</div>
-    </a>
-
-  </div>
-
-  <!-- Footer -->
-  <footer>
-    <span class="footer-text">BMS College of Engineering · <span>VarAInce</span></span>
-    <span class="footer-text">All scores saved to <span>Supabase</span></span>
-  </footer>
-
-</div>
-
-<script>
-  // Show player bar if session exists
-  const usn      = localStorage.getItem('usn');
-  const username = localStorage.getItem('username');
-
-  if (usn && username) {
-    const bar = document.getElementById('player-bar');
-    document.getElementById('pb-name').textContent = username;
-    document.getElementById('pb-usn').textContent  = usn;
-    bar.hidden = false;
-  }
-
-  document.getElementById('pb-reset')?.addEventListener('click', () => {
-    if (confirm('This will clear your saved identity. You will be asked to enter your name and USN again on the next game page. Continue?')) {
-      localStorage.removeItem('usn');
-      localStorage.removeItem('username');
-      location.reload();
-    }
-  });
-</script>
 </body>
 </html>

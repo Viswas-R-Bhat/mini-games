@@ -430,112 +430,51 @@
 <body>
 <div class="page">
 
-  <!-- Header -->
   <header>
-    <a class="back-link" href="../index.html">Games</a>
-    <span class="site-tag">MiniGames · VarAInce</span>
+    <a class="back-link" href="../games_list.html">Games</a>
+    <span class="site-tag">ReAIvive · VarAInce</span>
   </header>
 
-  <!-- Hero -->
   <div class="hero">
-    <p class="hero-eyebrow">Game 01 · 30 seconds</p>
+    <p class="hero-eyebrow">Game 01 · 30 seconds · 5 Attempts</p>
     <h1>TYPING<br/><span>SPEED</span></h1>
-    <p class="hero-sub">Type the paragraph below as fast and accurately as you can. Score = WPM × Accuracy.</p>
+    <p class="hero-sub">Type the paragraph as fast and accurately as you can. Best 3 of 5 attempts are scored.</p>
   </div>
 
-  <!-- HUD: Timer + live stats -->
   <div class="hud">
     <div id="timer" class="hud-timer">30</div>
     <div class="hud-divider"></div>
     <div class="hud-stats">
-      <div class="hud-stat">
-        <div id="stat-wpm"   class="hud-stat-val">0</div>
-        <div class="hud-stat-label">WPM</div>
-      </div>
-      <div class="hud-stat">
-        <div id="stat-acc"   class="hud-stat-val">0</div>
-        <div class="hud-stat-label">Accuracy</div>
-      </div>
-      <div class="hud-stat">
-        <div id="stat-chars" class="hud-stat-val">0</div>
-        <div class="hud-stat-label">Correct</div>
-      </div>
+      <div class="hud-stat"><div id="stat-wpm" class="hud-stat-val">0</div><div class="hud-stat-label">WPM</div></div>
+      <div class="hud-stat"><div id="stat-acc" class="hud-stat-val">0</div><div class="hud-stat-label">Accuracy</div></div>
+      <div class="hud-stat"><div id="stat-chars" class="hud-stat-val">0</div><div class="hud-stat-label">Correct</div></div>
     </div>
+    <div class="hud-divider"></div>
+    <div class="hud-stat"><div id="attempt-display" class="hud-stat-val" style="font-size:1rem;color:var(--warn)">—</div><div class="hud-stat-label">Attempt</div></div>
   </div>
 
-  <!-- Paragraph display -->
-  <div class="para-card">
-    <div id="para-display">Loading…</div>
-  </div>
+  <div class="para-card"><div id="para-display">Loading…</div></div>
 
-  <!-- Textarea input -->
   <div class="textarea-wrap">
-    <textarea
-      id="typing-area"
-      rows="3"
-      placeholder="Start typing to begin the countdown…"
-      autocomplete="off"
-      autocorrect="off"
-      autocapitalize="off"
-      spellcheck="false"
-    ></textarea>
+    <textarea id="typing-area" rows="3" placeholder="Start typing to begin the countdown…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
   </div>
 
-  <!-- Start hint -->
-  <div id="start-hint">
-    <span class="dot"></span>
-    Press any key in the box above to start the timer
-  </div>
+  <div id="start-hint"><span class="dot"></span>Press any key in the box above to start the timer</div>
 
-  <!-- Results (hidden until game ends) -->
   <section id="results-section" hidden>
-    <p class="res-title">GAME OVER</p>
+    <p class="res-title" id="res-title-text">GAME OVER</p>
     <div class="res-grid">
-      <div class="res-card">
-        <div id="res-wpm"   class="res-val highlight">0</div>
-        <div class="res-label">Words / min</div>
-      </div>
-      <div class="res-card">
-        <div id="res-acc"   class="res-val">0%</div>
-        <div class="res-label">Accuracy</div>
-      </div>
-      <div class="res-card">
-        <div id="res-score" class="res-val highlight">0</div>
-        <div class="res-label">Final Score</div>
-      </div>
-      <div class="res-card">
-        <div id="res-best"  class="res-val">—</div>
-        <div class="res-label">Your Best</div>
-      </div>
+      <div class="res-card"><div id="res-wpm" class="res-val highlight">0</div><div class="res-label">Words / min</div></div>
+      <div class="res-card"><div id="res-acc" class="res-val">0%</div><div class="res-label">Accuracy</div></div>
+      <div class="res-card"><div id="res-score" class="res-val highlight">0</div><div class="res-label">This Attempt</div></div>
+      <div class="res-card"><div id="res-best" class="res-val">—</div><div class="res-label">Best 3 Avg</div></div>
     </div>
     <div class="res-actions">
-      <button id="view-lb-btn"    class="btn btn-primary">View Leaderboard</button>
-      <button id="play-again-btn" class="btn btn-outline">Play Again</button>
+      <button id="play-again-btn" class="btn btn-primary">Next Attempt →</button>
     </div>
-  </section>
-
-  <!-- Leaderboard (hidden until requested) -->
-  <section id="lb-section" hidden style="margin-top:1.5rem">
-    <div class="lb-header">
-      <span class="lb-header-title">LEADERBOARD</span>
-      <span class="lb-badge">Typing Speed</span>
-    </div>
-    <p id="lb-loading" hidden>Fetching scores…</p>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Player</th>
-          <th>USN</th>
-          <th style="text-align:right">Score</th>
-        </tr>
-      </thead>
-      <tbody id="lb-body"></tbody>
-    </table>
   </section>
 
 </div>
-
 <script type="module" src="../games/typing.js"></script>
 </body>
 </html>

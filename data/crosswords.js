@@ -1,7 +1,9 @@
+// 3 crosswords: 1 Easy, 2 Hard. Sequential unlock.
 export const crosswords = [
   {
     id: 'cs-basics-1',
-    title: 'CS Basics',
+    title: 'CS Basics (Easy)',
+    difficulty: 'easy',
     gridSize: { rows: 6, cols: 7 },
     grid: [
       [  0,  'S', 'T', 'A', 'C', 'K',   0  ],
@@ -19,10 +21,11 @@ export const crosswords = [
     down: [
       { clue: 2, row: 0, col: 5, answer: 'KERNEL', text: 'Core of an operating system' },
     ],
-  }, // <--- THIS COMMA IS CRITICAL
+  },
   {
     id: 'cs-advanced-tier-1',
-    title: 'CS Engineering Tier',
+    title: 'CS Engineering (Hard)',
+    difficulty: 'hard',
     gridSize: { rows: 11, cols: 11 },
     grid: [
       [ 'H', 'E', 'I', 'S', 'E', 'N', 'B', 'U', 'G',  0,   0  ],
@@ -38,19 +41,46 @@ export const crosswords = [
       [  0,   0,   0,  'E',  0,   0,   0,   0,   0,   0,   0  ],
     ],
     across: [
-      { clue: 1, row: 0, col: 0, answer: 'HEISENBUG',  text: 'A software anomaly that disappears or alters its behavior when one attempts to probe it.' },
+      { clue: 1, row: 0, col: 0, answer: 'HEISENBUG',  text: 'A software anomaly that disappears when you try to probe it.' },
       { clue: 6, row: 2, col: 1, answer: 'IDEMPOTENT', text: 'Property where an operation has the same effect whether executed once or multiple times.' },
       { clue: 8, row: 4, col: 0, answer: 'RECURSION',  text: 'To understand this, you must first understand this.' },
     ],
     down: [
-      { clue: 1, row: 0, col: 0, answer: 'HYPERVISOR', text: 'Software that creates and runs virtual machines by isolating OS from hardware.' },
-      { clue: 2, row: 0, col: 3, answer: 'SPECULATIVE', text: 'Execution technique where a system performs tasks that may not be needed to reduce latency.' },
-      { clue: 3, row: 0, col: 5, answer: 'NOP',         text: 'The assembly instruction that performs no action other than incrementing the program counter.' },
-      { clue: 4, row: 0, col: 6, answer: 'BIOS',        text: 'Legacy firmware used to perform hardware initialization during the booting process.' },
-      { clue: 5, row: 0, col: 8, answer: 'GEEK',        text: 'A slang term for a person with an intense interest in computing or technology.' },
-      { clue: 7, row: 2, col: 10, answer: 'THREAD',     text: 'The smallest sequence of programmed instructions that can be managed independently by a scheduler.' },
-      { clue: 9, row: 4, col: 6, answer: 'INDEX',       text: 'A database structure used to improve data retrieval speed at the cost of additional storage.' },
-      { clue: 10, row: 4, col: 8, answer: 'NODE',       text: 'A fundamental unit of a data structure, such as a linked list or tree.' },
+      { clue: 1, row: 0, col: 0, answer: 'HYPERVISOR', text: 'Software that creates and runs virtual machines.' },
+      { clue: 2, row: 0, col: 3, answer: 'SPECULATIVE', text: 'Execution technique performing tasks that may not be needed.' },
+      { clue: 3, row: 0, col: 5, answer: 'NOP',         text: 'Assembly instruction that does nothing.' },
+      { clue: 4, row: 0, col: 6, answer: 'BIOS',        text: 'Legacy firmware for hardware initialization.' },
+      { clue: 5, row: 0, col: 8, answer: 'GEEK',        text: 'Slang for a person with intense interest in computing.' },
+      { clue: 7, row: 2, col: 10, answer: 'THREAD',     text: 'Smallest sequence of instructions managed by a scheduler.' },
+      { clue: 9, row: 4, col: 6, answer: 'INDEX',       text: 'Database structure to improve data retrieval speed.' },
+      { clue: 10, row: 4, col: 8, answer: 'NODE',       text: 'Fundamental unit of a data structure like a linked list.' },
+    ],
+  },
+  {
+    id: 'cs-advanced-tier-2',
+    title: 'Systems & Algorithms (Hard)',
+    difficulty: 'hard',
+    gridSize: { rows: 8, cols: 9 },
+    grid: [
+      [ 'M', 'U', 'T', 'E', 'X',  0,   0,   0,   0  ],
+      [  0,   0,  'H',  0,   0,   0,   0,   0,   0  ],
+      [  0,   0,  'R',  0,  'Q', 'U', 'E', 'U', 'E' ],
+      [ 'H', 'A', 'S', 'H',  0,   0,   0,   0,   0  ],
+      [  0,   0,  'O',  0,   0,   0,   0,   0,   0  ],
+      [ 'G', 'R', 'A', 'P', 'H',  0,   0,   0,   0  ],
+      [  0,   0,  'T',  0,  'E',  0,   0,   0,   0  ],
+      [  0,   0,   0,   0,  'A',  0,   0,   0,   0  ],
+      [  0,   0,   0,   0,  'P',  0,   0,   0,   0  ],
+    ],
+    across: [
+      { clue: 1, row: 0, col: 0, answer: 'MUTEX', text: 'Synchronization primitive for exclusive access to a resource.' },
+      { clue: 4, row: 2, col: 4, answer: 'QUEUE', text: 'First-in, first-out data structure.' },
+      { clue: 5, row: 3, col: 0, answer: 'HASH',  text: 'Function that maps data to a fixed-size value.' },
+      { clue: 6, row: 5, col: 0, answer: 'GRAPH', text: 'Collection of nodes and edges.' },
+    ],
+    down: [
+      { clue: 2, row: 0, col: 2, answer: 'THROSAT', text: 'Rate limiting technique (split across).' },
+      { clue: 3, row: 2, col: 4, answer: 'QHEAP',   text: 'Priority-based data structure.' },
     ],
   },
 ];
