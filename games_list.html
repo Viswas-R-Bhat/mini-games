@@ -262,9 +262,9 @@
       const banner = document.getElementById('lb-banner');
       if (visible) {
         banner.style.display = 'block';
-        const { data } = await supabase.from('game_scores').select('usn, score');
+        const { data } = await supabase.from('game_scores').select('team_name, score');
         const scores = {};
-        (data || []).forEach(r => { const n = r.usn || 'Unknown'; scores[n] = (scores[n] || 0) + r.score; });
+        (data || []).forEach(r => { const n = r.team_name || 'Unknown'; scores[n] = (scores[n] || 0) + r.score; });
         const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
         document.getElementById('lb-banner-body').innerHTML = sorted.map((r, i) =>
           `<tr><td class="lb-rank">${i+1}</td><td>${r[0]}</td><td class="lb-score">${r[1]}</td></tr>`
