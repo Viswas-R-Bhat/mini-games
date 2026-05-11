@@ -1,6 +1,7 @@
 // /games/memory.js — 3 levels: Easy → Medium → Hard, sequential unlock.
 import { initPlayer, submitScore } from '../lib/submitScore.js';
 import { levels } from '../data/memory.js';
+import { _d } from '../lib/cipher.js';
 
 const REVEAL_MS = 600;
 const LEVEL_ORDER = ['easy', 'medium', 'hard'];
@@ -114,8 +115,9 @@ function startLevel(level) {
 
   const raw = [];
   set.pairs.forEach(p => {
-    raw.push({ pairId: p.id, text: p.a, side: 'a' });
-    raw.push({ pairId: p.id, text: p.b, side: 'b' });
+    // Use encoded _p instead of plaintext pairId
+    raw.push({ _p: p._p, text: p.a, side: 'a' });
+    raw.push({ _p: p._p, text: p.b, side: 'b' });
   });
 
   for (let i = raw.length - 1; i > 0; i--) {
@@ -136,10 +138,11 @@ function renderGrid(cols) {
     const div = document.createElement('div');
     div.className = 'mem-card';
     div.dataset.idx = i;
+    // Don't put card text in DOM until flipped — prevents inspect cheating
     div.innerHTML = `
       <div class="mem-card-inner">
         <div class="mem-card-front">?</div>
-        <div class="mem-card-back">${escHtml(card.text)}</div>
+        <div class="mem-card-back"></div>
       </div>`;
     div.addEventListener('click', () => onCardClick(i));
     grid.appendChild(div);
@@ -161,7 +164,10 @@ function onCardClick(idx) {
     locked = true;
 
     const [a, b] = flippedCards;
-    if (cards[a].pairId === cards[b].pairId && cards[a].side !== cards[b].side) {
+    // Decode pair IDs at comparison time
+    const pairA = _d(cards[a]._p);
+    const pairB = _d(cards[b]._p);
+    if (pairA === pairB && cards[a].side !== cards[b].side) {
       cards[a].matched = true;
       cards[b].matched = true;
       matchedCount++;
@@ -185,8 +191,17 @@ function onCardClick(idx) {
 function flipCard(idx, show) {
   cards[idx].flipped = show;
   const el = document.querySelectorAll('.mem-card')[idx];
-  if (show) el.classList.add('flipped');
-  else el.classList.remove('flipped');
+  if (show) {
+    el.classList.add('flipped');
+    // Set card text only when flipped — not present in DOM before
+    const backEl = el.querySelector('.mem-card-back');
+    if (backEl) backEl.textContent = cards[idx].text;
+  } else {
+    el.classList.remove('flipped');
+    // Clear text when flipped back to prevent inspect
+    const backEl = el.querySelector('.mem-card-back');
+    if (backEl) backEl.textContent = '';
+  }
 }
 
 function markMatched(idx) {

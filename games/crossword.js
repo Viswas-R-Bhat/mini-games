@@ -1,6 +1,7 @@
-// /games/crossword.js — 3 puzzles, sequential unlock (Easy → Hard → Hard)
+// /games/crossword.js — 3 puzzles, sequential unlock (Easy → Medium → Hard)
 import { initPlayer, submitScore } from '../lib/submitScore.js';
 import { crosswords } from '../data/crosswords.js';
+import { _d } from '../lib/cipher.js';
 
 let player = null;
 let puzzle = null;
@@ -95,38 +96,10 @@ function startPuzzle(idx) {
   document.getElementById('timer').textContent = '00:00';
   document.getElementById('puzzle-name').textContent = puzzle.title;
 
-  // Validate
-  const errors = validateCrossword(puzzle);
-  if (errors.length) {
-    document.getElementById('crossword-grid').innerHTML = `<div style="color:var(--warn);font-family:var(--ff-mono);padding:1rem;font-size:.78rem"><strong>Invalid puzzle</strong><br>${errors.map(e => '• ' + e).join('<br>')}</div>`;
-    return;
-  }
-
   buildClueList();
   renderGrid();
   renderClues();
   if (clueList.length) activateClue(clueList[0], false);
-}
-
-function validateCrossword(cw) {
-  const errors = [];
-  const { gridSize, grid, across, down } = cw;
-  if (!gridSize || !grid || !across || !down) { errors.push('Missing fields'); return errors; }
-  if (grid.length !== gridSize.rows) errors.push(`Grid rows mismatch`);
-  grid.forEach((row, r) => { if (row.length !== gridSize.cols) errors.push(`Row ${r} cols mismatch`); });
-  const checkWord = (list, dir) => list.forEach(({ clue: num, row, col, answer }) => {
-    if (!answer) { errors.push(`${dir} ${num}: no answer`); return; }
-    for (let i = 0; i < answer.length; i++) {
-      const r = dir === 'across' ? row : row + i;
-      const c = dir === 'across' ? col + i : col;
-      const cell = grid[r]?.[c];
-      if (!cell) errors.push(`${dir} ${num}: OOB at (${r},${c})`);
-      else if (cell !== answer[i]) errors.push(`${dir} ${num}: mismatch at (${r},${c})`);
-    }
-  });
-  checkWord(across, 'across');
-  checkWord(down, 'down');
-  return errors;
 }
 
 function buildClueList() {
@@ -147,10 +120,11 @@ function renderGrid() {
 
   for (let r = 0; r < gridSize.rows; r++) {
     for (let c = 0; c < gridSize.cols; c++) {
-      const letter = grid[r][c];
+      const cellVal = grid[r][c];
       const div = document.createElement('div');
       div.className = 'xw-cell';
-      if (!letter) { div.classList.add('xw-black'); }
+      // 0 = black cell, any encoded string = letter cell
+      if (!cellVal || cellVal === 0) { div.classList.add('xw-black'); }
       else {
         const num = startNums[`${r},${c}`];
         if (num != null) { const span = document.createElement('span'); span.className = 'xw-num'; span.textContent = num; div.appendChild(span); }
@@ -189,8 +163,8 @@ function renderClues() {
 function activateClue(c, focusFirst = true) {
   activeClue = { ...c };
   Object.values(cellMap).forEach(({ el }) => el.classList.remove('xw-highlight', 'xw-active-cell'));
-  const { dir, row, col, answer } = c;
-  for (let i = 0; i < answer.length; i++) {
+  const { dir, row, col, len } = c;
+  for (let i = 0; i < len; i++) {
     const r = dir === 'across' ? row : row + i;
     const cc = dir === 'across' ? col + i : col;
     cellMap[`${r},${cc}`]?.el.classList.add('xw-highlight');
@@ -200,7 +174,7 @@ function activateClue(c, focusFirst = true) {
   if (li) { li.classList.add('clue-active'); li.scrollIntoView({ block: 'nearest' }); }
   if (focusFirst) {
     let targetKey = `${row},${col}`;
-    for (let i = 0; i < answer.length; i++) {
+    for (let i = 0; i < len; i++) {
       const r = dir === 'across' ? row : row + i;
       const cc = dir === 'across' ? col + i : col;
       const cell = cellMap[`${r},${cc}`];
@@ -230,7 +204,7 @@ function findClueForCell(r, c, dir) {
   const list = dir === 'across' ? puzzle.across : puzzle.down;
   for (let i = 0; i < list.length; i++) {
     const cl = list[i];
-    for (let j = 0; j < cl.answer.length; j++) {
+    for (let j = 0; j < cl.len; j++) {
       const cr = dir === 'across' ? cl.row : cl.row + j;
       const cc = dir === 'across' ? cl.col + j : cl.col;
       if (cr === r && cc === c) return { ...cl, dir, index: i };
@@ -265,13 +239,13 @@ function onInput(e, r, c) {
 
 function adjacentCell(r, c, step) {
   if (!activeClue) return null;
-  const { dir, row, col, answer } = activeClue;
-  for (let i = 0; i < answer.length; i++) {
+  const { dir, row, col, len } = activeClue;
+  for (let i = 0; i < len; i++) {
     const cr = dir === 'across' ? row : row + i;
     const cc = dir === 'across' ? col + i : col;
     if (cr === r && cc === c) {
       const ni = i + step;
-      if (ni < 0 || ni >= answer.length) return null;
+      if (ni < 0 || ni >= len) return null;
       const nr = dir === 'across' ? row : row + ni;
       const nc = dir === 'across' ? col + ni : col;
       return cellMap[`${nr},${nc}`] || null;
@@ -301,10 +275,22 @@ async function checkAnswers() {
   finished = true;
   clearInterval(timerInterval);
 
+  // Build expected letter map by decoding clue answers at validation time
+  const expectedMap = {};
+  [...puzzle.across, ...puzzle.down].forEach(clue => {
+    const answer = _d(clue._a);
+    const dir = puzzle.across.includes(clue) ? 'across' : 'down';
+    for (let i = 0; i < answer.length; i++) {
+      const r = dir === 'across' ? clue.row : clue.row + i;
+      const c = dir === 'across' ? clue.col + i : clue.col;
+      expectedMap[`${r},${c}`] = answer[i];
+    }
+  });
+
   let correct = 0;
   const total = Object.keys(cellMap).length;
   Object.values(cellMap).forEach(({ inputEl, r, c }) => {
-    const expected = puzzle.grid[r][c];
+    const expected = expectedMap[`${r},${c}`];
     const given = (inputEl.value || '').toUpperCase();
     if (given === expected) { correct++; inputEl.parentElement.classList.add('cell-correct'); }
     else { inputEl.parentElement.classList.add('cell-wrong'); }

@@ -1,6 +1,7 @@
 // /games/debug.js — Find bugs in C, C++, Python. Mixed difficulty, weighted points.
 import { initPlayer, submitScore } from '../lib/submitScore.js';
 import { snippets as allSnippets } from '../data/debug.js';
+import { _n, _d } from '../lib/cipher.js';
 
 let player = null;
 let snippets = [];
@@ -107,7 +108,10 @@ function submitFix() {
   roundPhase = 'result';
 
   const snip = snippets[current];
-  const correctLine = snip.bugLine === selectedLine;
+  // Decode answer only at validation time
+  const bugLine = _n(snip._bl);
+  const fixedCode = _d(snip._fc);
+  const correctLine = bugLine === selectedLine;
   const fixInput = document.getElementById('fix-input').value.trim();
 
   let roundScore = 0;
@@ -118,14 +122,14 @@ function submitFix() {
     feedback = '✓ Correct line identified! ';
 
     const normalize = s => s.replace(/\s+/g, ' ').trim().toLowerCase();
-    if (normalize(fixInput) === normalize(snip.fixedCode)) {
+    if (normalize(fixInput) === normalize(fixedCode)) {
       roundScore += Math.floor(snip.points * 0.5); // 50% for correct fix
       feedback += '✓ Perfect fix!';
     } else {
       feedback += '✗ Fix was incorrect.';
     }
   } else {
-    feedback = `✗ Wrong line. Bug was on line ${snip.bugLine + 1}.`;
+    feedback = `✗ Wrong line. Bug was on line ${bugLine + 1}.`;
   }
 
   score += roundScore;
@@ -142,12 +146,12 @@ function submitFix() {
   resultEl.hidden = false;
   document.getElementById('round-feedback').textContent = feedback;
   document.getElementById('round-hint').textContent = `Hint: ${snip.hint}`;
-  document.getElementById('correct-fix').textContent = snip.fixedCode;
+  document.getElementById('correct-fix').textContent = fixedCode;
   document.getElementById('round-pts').textContent = `+${roundScore} pts (${snip.difficulty})`;
 
   document.querySelectorAll('.code-line').forEach((el, i) => {
-    if (i === snip.bugLine) el.classList.add('line-bug');
-    if (i === selectedLine && selectedLine !== snip.bugLine) el.classList.add('line-wrong-pick');
+    if (i === bugLine) el.classList.add('line-bug');
+    if (i === selectedLine && selectedLine !== bugLine) el.classList.add('line-wrong-pick');
   });
 
   document.getElementById('fix-area').hidden = true;

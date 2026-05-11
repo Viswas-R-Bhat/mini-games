@@ -1,5 +1,6 @@
 // /data/debug.js — Code snippets with bugs. C, C++, Python ONLY.
 // Each snippet has: difficulty ('easy'|'medium'|'hard'), points weight.
+// Bug line and fix are encoded to prevent inspection via DevTools.
 export const snippets = [
   // ── EASY (100 pts) ──
   {
@@ -12,8 +13,8 @@ export const snippets = [
       '        total += lst[i]',
       '    return total',
     ],
-    bugLine: 2,
-    fixedCode: '    for i in range(len(lst)):',
+    _bl: 'ZA==',
+    _fc: 'dkFSYS8BEUVbEFtYdhMTLy4LSwlXXhpaJRVbaHM=',
     hint: 'Off-by-one: range(len+1) causes IndexError',
   },
   {
@@ -28,8 +29,8 @@ export const snippets = [
       '    return len + 1;',
       '}',
     ],
-    bugLine: 5,
-    fixedCode: '    return len;',
+    _bl: 'Yw==',
+    _fc: 'dkFSYTsLFxBAXhJaMw9J',
     hint: 'Returns length + 1 instead of just length',
   },
   {
@@ -43,8 +44,8 @@ export const snippets = [
       '# Calling add_item("a") then add_item("b")',
       '# Expected: ["a"] then ["b"]',
     ],
-    bugLine: 0,
-    fixedCode: 'def add_item(item, lst=None):',
+    _bl: 'Zg==',
+    _fc: 'MgQUYSgKBzpbRFdbfggGJCRCQwlBRA94OQ8XaHM=',
     hint: 'Mutable default argument shared across calls',
   },
   {
@@ -60,8 +61,8 @@ export const snippets = [
       '    return mx;',
       '}',
     ],
-    bugLine: 3,
-    fixedCode: '    for (int i = 1; i < v.size(); i++) {',
+    _bl: 'ZQ==',
+    _fc: 'dkFSYS8BEUUaWVxCdghSfGlfWEVbEA4WIE8BKDMLS0wJEFsdfUhSOg==',
     hint: 'Off-by-one: <= causes out-of-bounds access',
   },
   {
@@ -73,8 +74,8 @@ export const snippets = [
       '    b = a',
       '    return a, b',
     ],
-    bugLine: 1,
-    fixedCode: '    a, b = b, a',
+    _bl: 'Zw==',
+    _fc: 'dkFSYShCQwcSDRJUekET',
     hint: 'Original value of a is lost before assignment to b',
   },
 
@@ -95,8 +96,8 @@ export const snippets = [
       '            high = mid - 1',
       '    return -1',
     ],
-    bugLine: 7,
-    fixedCode: '            low = mid + 1',
+    _bl: 'YQ==',
+    _fc: 'dkFSYWlOQ0USEBIWOg4FYXRODgxWEBkWZw==',
     hint: 'Infinite loop: low must advance past mid',
   },
   {
@@ -112,8 +113,8 @@ export const snippets = [
       '            result.append(item)',
       '    return result',
     ],
-    bugLine: 4,
-    fixedCode: '            result.extend(flatten(item))',
+    _bl: 'Yg==',
+    _fc: 'dkFSYWlOQ0USEBIWJAQBNCUaTQBKRFdYMkkULSgaFwBcGFtCMwxbaA==',
     hint: 'append vs extend: append nests the list instead of flattening',
   },
   {
@@ -129,8 +130,8 @@ export const snippets = [
       '    }',
       '}',
     ],
-    bugLine: 2,
-    fixedCode: '    for (int i = 0; i < len / 2; i++) {',
+    _bl: 'ZA==',
+    _fc: 'dkFSYS8BEUUaWVxCdghSfGleWEVbEA4WOgQcYWZOUV4SWRkdf0EJ',
     hint: 'Loop runs full length, reversing then un-reversing',
   },
   {
@@ -145,8 +146,8 @@ export const snippets = [
       '    (*head)->next = n;',
       '}',
     ],
-    bugLine: 5,
-    fixedCode: '    n->next = *head; *head = n;',
+    _bl: 'Yw==',
+    _fc: 'dkFSYSdDXQtXSEYWa0FYKSwPB14SGlpTNwVSfGkAWA==',
     hint: 'Overwrites second node instead of prepending to head',
   },
   {
@@ -163,8 +164,8 @@ export const snippets = [
       '        return result',
       '    return wrapper',
     ],
-    bugLine: 6,
-    fixedCode: '        cache[args] = result',
+    _bl: 'YA==',
+    _fc: 'dkFSYWlOQ0VRUVFeMzoTMy4dPkUPEEBTJRQeNQ==',
     hint: 'Calls fn() twice — should cache the already-computed result',
   },
   {
@@ -179,8 +180,8 @@ export const snippets = [
       '    return result;',
       '}',
     ],
-    bugLine: 2,
-    fixedCode: '    char *result = malloc(len + 1);',
+    _bl: 'ZA==',
+    _fc: 'dkFSYSoGAhcSGkBTJRQeNWlTQwhTXF5ZNUkeJCdOSEUDGQk=',
     hint: 'No space for null terminator — buffer overflow',
   },
 
@@ -196,8 +197,8 @@ export const snippets = [
       '        return 1',
       '    return fibonacci(n - 1) + fibonacci(n - 3)',
     ],
-    bugLine: 5,
-    fixedCode: '    return fibonacci(n - 1) + fibonacci(n - 2)',
+    _bl: 'Yw==',
+    _fc: 'dkFSYTsLFxBAXhJQPwMdLygNAAwaXhIbdlBbYWJOBQxQX1xXNQIbaSdOTkUAGQ==',
     hint: 'Wrong recursive call: n-3 should be n-2',
   },
   {
@@ -211,8 +212,8 @@ export const snippets = [
       '};',
       '// Creates circular reference — memory leak',
     ],
-    bugLine: 3,
-    fixedCode: '    std::weak_ptr<Node> prev;',
+    _bl: 'ZQ==',
+    _fc: 'dkFSYToaB18IR1dXPT4CNTtSLQpWVQwWJhMXN3I=',
     hint: 'Circular shared_ptr creates a memory leak — use weak_ptr',
   },
   {
@@ -226,8 +227,8 @@ export const snippets = [
       '    free(copy);',
       '}',
     ],
-    bugLine: 4,
-    fixedCode: '    // remove this line — copy points to same memory as arr',
+    _bl: 'Yg==',
+    _fc: 'dkFSYWZBQxdXXV1AM0EGKSAdQwlbXlcWQkERLjkXQxVdWVxCJUEGLmkdAghXEF9TOw4AOGkPEEVTQkA=',
     hint: 'Double free: copy and arr point to the same memory',
   },
   {
@@ -243,8 +244,8 @@ export const snippets = [
       '        candidate += 1',
       '    return primes[n]',
     ],
-    bugLine: 7,
-    fixedCode: '    return primes',
+    _bl: 'YQ==',
+    _fc: 'dkFSYTsLFxBAXhJGJAgfJDo=',
     hint: 'Index out of range: primes has n elements, index n is OOB',
   },
   {
@@ -260,8 +261,8 @@ export const snippets = [
       '    }',
       '}',
     ],
-    bugLine: 4,
-    fixedCode: '            it = v.erase(it); } else { ++it; }',
+    _bl: 'Yg==',
+    _fc: 'dkFSYWlOQ0USEBIWPxVSfGkYTQBAUUFTfggGaHJOHkVXXEFTdhpSamIHF14STQ==',
     hint: 'erase() invalidates iterator — must use returned iterator',
   },
 ];

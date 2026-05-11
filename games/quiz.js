@@ -1,5 +1,6 @@
 import { initPlayer, submitScore, getAttemptInfo } from '../lib/submitScore.js';
 import { questionsByRound } from '../data/quiz.js';
+import { _n } from '../lib/cipher.js';
 
 const NUM_QUESTIONS = 10;
 const TIME_PER_Q = 10;
@@ -136,14 +137,16 @@ function selectAnswer(idx) {
   clearInterval(qTimer);
 
   const q = questions[current];
+  // Decode answer only at validation time
+  const correctIdx = _n(q._a);
   const buttons = document.querySelectorAll('.option-btn');
   buttons.forEach((btn, i) => {
     btn.disabled = true;
-    if (i === q.answer) btn.classList.add('opt-correct');
-    if (i === idx && idx !== q.answer) btn.classList.add('opt-wrong');
+    if (i === correctIdx) btn.classList.add('opt-correct');
+    if (i === idx && idx !== correctIdx) btn.classList.add('opt-wrong');
   });
 
-  if (idx === q.answer) correct++;
+  if (idx === correctIdx) correct++;
   document.getElementById('score-live').textContent = correct;
 
   setTimeout(() => { current++; showQuestion(); }, 1200);
