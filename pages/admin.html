@@ -416,7 +416,7 @@ async function loadLeaderboard() {
   const game = document.getElementById('lb-game-filter').value;
   const tbody = document.getElementById('lb-body');
 
-  let query = supabase.from('game_scores').select('*');
+  let query = supabase.from('game_scores').select('usn, game, score');
 
   if (game !== 'all') {
     query = query.eq('game', game);
@@ -425,17 +425,17 @@ async function loadLeaderboard() {
   const { data, error } = await query;
   if (error) {
     console.error('[Admin Leaderboard] Supabase error:', JSON.stringify(error));
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--warn);padding:1.5rem">Error: ${escHtml(error.message || error.hint || error.code || JSON.stringify(error))}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--warn);padding:1.5rem">Error: ${escHtml(error.message || JSON.stringify(error))}</td></tr>`;
     return;
   }
-  console.log('[Admin Leaderboard] data:', data);
   const rows = data || [];
 
-  // Aggregate by team
+  // Aggregate by team (usn column holds team_name)
   const teamScores = {};
   rows.forEach(r => {
-    if (!teamScores[r.team_name]) teamScores[r.team_name] = 0;
-    teamScores[r.team_name] += r.score;
+    const name = r.usn || 'Unknown';
+    if (!teamScores[name]) teamScores[name] = 0;
+    teamScores[name] += r.score;
   });
 
   const sorted = Object.entries(teamScores)
