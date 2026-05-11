@@ -343,7 +343,7 @@ document.getElementById('add-team-btn').addEventListener('click', async () => {
 
 window.deleteTeam = async function(name) {
   if (!confirm(`Delete team "${name}"? This will remove all their data.`)) return;
-  await supabase.from('game_scores').delete().eq('team_name', name);
+  await supabase.from('game_scores').delete().eq('usn', name);
   await supabase.from('attempt_logs').delete().eq('team_name', name);
   await supabase.from('teams').delete().eq('team_name', name);
   loadTeams();
@@ -378,7 +378,7 @@ document.getElementById('reset-progress-btn').addEventListener('click', async ()
   if (!team) { showMsg(msgEl, 'Select a team.', false); return; }
   if (!confirm(`Reset ALL progress for ${team} in ${game}?`)) return;
 
-  await supabase.from('game_scores').delete().eq('team_name', team).eq('game', game);
+  await supabase.from('game_scores').delete().eq('usn', team).eq('game', game);
   await supabase.from('attempt_logs').delete().eq('team_name', team).eq('game', game);
   await supabase.from('extra_attempts').delete().eq('team_name', team).eq('game', game);
   showMsg(msgEl, `Progress reset for ${team} in ${game}.`, true);
