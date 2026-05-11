@@ -239,24 +239,44 @@
 <script type="module">
 import { supabase } from '../lib/supabaseClient.js';
 
-// ── Admin Auth ──
-const ADMIN_USER = 'varaince';
-const ADMIN_PASS = 'ReAIvive14052026';
-
+// ── Admin Auth (server-side validation via /api/admin-login) ──
 function checkAuth() {
   return sessionStorage.getItem('admin_auth') === 'true';
 }
 
 if (checkAuth()) showDashboard();
 
-document.getElementById('login-btn').addEventListener('click', () => {
+document.getElementById('login-btn').addEventListener('click', async () => {
   const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pass').value;
-  if (u === ADMIN_USER && p === ADMIN_PASS) {
-    sessionStorage.setItem('admin_auth', 'true');
-    showDashboard();
-  } else {
-    document.getElementById('login-error').textContent = 'Invalid credentials.';
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+
+  if (!u || !p) { errEl.textContent = 'Enter both fields.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'VERIFYING...';
+  errEl.textContent = '';
+
+  try {
+    const res = await fetch('/api/admin-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: u, password: p })
+    });
+    const json = await res.json();
+
+    if (json.success) {
+      sessionStorage.setItem('admin_auth', 'true');
+      showDashboard();
+    } else {
+      errEl.textContent = json.error || 'Invalid credentials.';
+    }
+  } catch (e) {
+    errEl.textContent = 'Network error. Please try again.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'AUTHENTICATE →';
   }
 });
 
@@ -270,6 +290,7 @@ function showDashboard() {
   document.getElementById('dashboard').style.display = 'block';
   loadTeams();
   loadLeaderboard();
+  startLeaderboardAutoRefresh();
 }
 
 // ── Tabs ──
@@ -416,6 +437,25 @@ async function loadLeaderboard() {
   tbody.innerHTML = sorted.length
     ? sorted.map(r => `<tr><td class="lb-rank">${r.rank}</td><td>${escHtml(r.name)}</td><td class="lb-score">${r.score}</td></tr>`).join('')
     : '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:1.5rem">No scores yet.</td></tr>';
+}
+
+// ── Leaderboard Auto-Refresh (every 10 seconds) ──
+let lbRefreshInterval = null;
+
+function startLeaderboardAutoRefresh() {
+  // Poll every 10 seconds
+  if (lbRefreshInterval) clearInterval(lbRefreshInterval);
+  lbRefreshInterval = setInterval(() => {
+    loadLeaderboard();
+  }, 10000);
+
+  // Also subscribe to Supabase realtime changes on game_scores
+  supabase
+    .channel('admin-scores')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'game_scores' }, () => {
+      loadLeaderboard();
+    })
+    .subscribe();
 }
 
 function showMsg(el, text, ok) {
