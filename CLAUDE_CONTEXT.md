@@ -67,11 +67,11 @@ All games follow a **localStorage-first, Supabase-second** pattern:
 - **Leaderboard Toggle**: Show/hide live leaderboard on participant screens (via Supabase `admin_config` table)
 - **Live Leaderboard**: Filter by game, aggregated scores
 
-## Supabase Tables Required
+## Supabase Tables (Actual Schema)
 - `teams` — `id`, `team_name` (unique), `created_at`
-- `game_scores` — `team_name`, `game`, `score`, `meta` (jsonb), `updated_at` (unique on team_name+game)
-- `attempt_logs` — `team_name`, `game`, `score`, `meta` (jsonb), `created_at`
-- `extra_attempts` — `team_name`, `game`, `extra` (int), unique on team_name+game
+- `game_scores` — `usn` (stores team_name), `game`, `score`, `meta` (jsonb), `updated_at` (unique on usn+game)
+- `attempt_logs` — `id`, `usn` (stores team_name), `game`, `score`, `meta` (jsonb), `created_at`
+- `extra_attempts` — `id`, `team_name`, `game`, `extra` (int), unique on team_name+game
 - `admin_config` — `key` (unique), `value`
 
 ## Vercel Routing
