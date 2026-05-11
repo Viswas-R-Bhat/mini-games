@@ -422,7 +422,12 @@ async function loadLeaderboard() {
     query = query.eq('game', game);
   }
 
-  const { data } = await query;
+  const { data, error } = await query;
+  if (error) {
+    console.error('[Admin Leaderboard] Supabase error:', error);
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--warn);padding:1.5rem">Error: ${escHtml(error.message || error.code || JSON.stringify(error))}</td></tr>`;
+    return;
+  }
   const rows = data || [];
 
   // Aggregate by team
