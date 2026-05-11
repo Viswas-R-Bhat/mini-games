@@ -239,6 +239,8 @@
 <script type="module">
 import { supabase } from '../lib/supabaseClient.js';
 
+let lbRefreshInterval = null;
+
 // ── Admin Auth (server-side validation via /api/admin-login) ──
 function checkAuth() {
   return sessionStorage.getItem('admin_auth') === 'true';
@@ -440,7 +442,6 @@ async function loadLeaderboard() {
 }
 
 // ── Leaderboard Auto-Refresh (every 10 seconds) ──
-let lbRefreshInterval = null;
 
 function startLeaderboardAutoRefresh() {
   // Poll every 10 seconds
