@@ -17,11 +17,29 @@ let roundPhase = 'select';
 
 document.addEventListener('DOMContentLoaded', async () => {
   player = await initPlayer();
+
   // Show ALL snippets — player can solve any, order by difficulty
   snippets = [...allSnippets].sort((a, b) => {
     const order = { easy: 0, medium: 1, hard: 2 };
     return order[a.difficulty] - order[b.difficulty];
   });
+
+  // ── Restore saved session if it exists ──────────────────────────────
+  const sessionKey = `debug_session_${player.team_name}`;
+  const saved = JSON.parse(localStorage.getItem(sessionKey) || 'null');
+  if (saved) {
+    timerSecs = saved.timerSecs || 0;
+    totalTime = saved.totalTime || 0;
+    score = saved.score || 0;
+    const scoreLiveEl = document.getElementById('score-live');
+    if (scoreLiveEl) scoreLiveEl.textContent = score;
+    // Re-mark solved snippets so cards show correct status after restore
+    (saved.solvedIds || []).forEach(title => {
+      const snip = snippets.find(s => s.title === title);
+      if (snip) snip._solved = true;
+    });
+  }
+
   attachListeners();
   renderSnippetList();
   startTimer();
@@ -48,9 +66,11 @@ function renderSnippetList() {
         <span class="snippet-pts">${snip.points} pts</span>
       </div>
       <div class="snippet-card-title">${snip.title}</div>
-      <div class="snippet-card-status" id="status-${i}">UNSOLVED</div>
+      <div class="snippet-card-status" id="status-${i}">${snip._solved ? 'SOLVED' : 'UNSOLVED'}</div>
     `;
-    div.addEventListener('click', () => showRound(i));
+    // Grey out already-solved cards
+    if (snip._solved) div.classList.add('solved');
+    div.addEventListener('click', () => { if (!snip._solved) showRound(i); });
     listEl.appendChild(div);
   });
 
@@ -159,29 +179,56 @@ function submitFix() {
   // Mark snippet as done
   snip._solved = true;
 
+  // Persist progress immediately after each submission
+  saveSession();
+
   // Check if all solved
   const allDone = snippets.every(s => s._solved);
   if (allDone) setTimeout(() => endGame(), 1500);
 }
 
+// ── Timer ────────────────────────────────────────────────────────────────────
 function startTimer() {
   if (timerRunning) return;
   timerRunning = true;
+
+  // Render restored time immediately so the display isn't wrong for the first tick
+  const timerEl = document.getElementById('timer');
+  if (timerEl) timerEl.textContent = formatTime(timerSecs);
+
   timerInterval = setInterval(() => {
     timerSecs++;
     totalTime++;
-    document.getElementById('timer').textContent = formatTime(timerSecs);
+    if (timerEl) timerEl.textContent = formatTime(timerSecs);
+
+    // Persist every 5 seconds — refresh costs at most 5s of timer drift
+    if (timerSecs % 5 === 0) saveSession();
   }, 1000);
+}
+
+function saveSession() {
+  if (!player) return;
+  const sessionKey = `debug_session_${player.team_name}`;
+  localStorage.setItem(sessionKey, JSON.stringify({
+    timerSecs,
+    totalTime,
+    score,
+    solvedIds: snippets.filter(s => s._solved).map(s => s.title),
+  }));
 }
 
 function formatTime(s) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
+// ── End game ─────────────────────────────────────────────────────────────────
 async function endGame() {
   if (finished) return;
   finished = true;
   clearInterval(timerInterval);
+
+  // Clear session — game is over, no need to restore on next visit
+  if (player) localStorage.removeItem(`debug_session_${player.team_name}`);
 
   const finalScore = Math.max(0, score - Math.floor(totalTime / 2));
 
@@ -198,9 +245,13 @@ async function endGame() {
   });
 }
 
-// Add "Done / Submit" button handler
+// "Done / Submit all" button
 document.getElementById('finish-btn')?.addEventListener('click', () => endGame());
 
 function escHtml(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
