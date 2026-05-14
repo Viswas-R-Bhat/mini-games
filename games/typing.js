@@ -15,8 +15,8 @@ const paragraphs = [
 ];
 
 const GAME_DURATION = 30;
-const BASE_ATTEMPTS = 5;
-const BEST_OF = 3;
+const BASE_ATTEMPTS = 3;
+const BEST_OF = 2;
 
 let player = null;
 let paragraph = '';
