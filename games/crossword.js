@@ -64,17 +64,21 @@ function renderPuzzleSelect() {
   crosswords.forEach((cw, i) => {
     const unlocked = isPuzzleUnlocked(i);
     const score = puzzleScores[i] || 0;
+    const completed = score > 0;
     const btn = document.createElement('button');
-    btn.className = `puzzle-btn ${unlocked ? '' : 'locked'} ${score > 0 ? 'completed' : ''}`;
+    btn.className = `puzzle-btn ${!unlocked ? 'locked' : completed ? 'completed' : ''}`;
     btn.innerHTML = `
       <span class="puzzle-num">${i + 1}</span>
       <div class="puzzle-info">
         <span class="puzzle-title">${cw.title}</span>
         <span class="puzzle-diff diff-${cw.difficulty}">${cw.difficulty.toUpperCase()}</span>
       </div>
-      <span class="puzzle-status">${score > 0 ? '✓ ' + score : unlocked ? 'PLAY →' : '🔒'}</span>
+      <span class="puzzle-status">${completed ? '✓ ' + score + ' pts' : unlocked ? 'PLAY →' : '🔒'}</span>
     `;
-    if (unlocked) btn.addEventListener('click', () => startPuzzle(i));
+    // Only allow playing if unlocked AND not yet completed
+    if (unlocked && !completed) btn.addEventListener('click', () => startPuzzle(i));
+    // Completed puzzles are visually distinct but not clickable
+    if (completed) btn.style.cursor = 'default';
     container.appendChild(btn);
   });
 }
@@ -301,8 +305,6 @@ async function checkAnswers() {
   const finalScore = Math.max(0, rawScore);
   puzzleScores[puzzleIdx] = Math.max(puzzleScores[puzzleIdx] || 0, finalScore);
 
-  const totalScore = Object.values(puzzleScores).reduce((a, b) => a + b, 0);
-
   document.getElementById('res-correct').textContent = correct;
   document.getElementById('res-total').textContent = total;
   document.getElementById('res-score').textContent = finalScore;
@@ -314,8 +316,10 @@ async function checkAnswers() {
   const cacheKey = `crossword_progress_${player.team_name}`;
   localStorage.setItem(cacheKey, JSON.stringify({ puzzleScores: { ...puzzleScores } }));
 
+  // Submit only this puzzle's score (not cumulative total)
+  // The Supabase RPC uses GREATEST so it keeps the best score per game
   await submitScore({
-    usn: player.team_name, game: 'crossword', score: totalScore,
+    usn: player.team_name, game: 'crossword', score: finalScore,
     meta: { correct, total, timeTaken: timerSecs, puzzleId: puzzle.id, puzzleIdx, puzzleScores: { ...puzzleScores } },
   });
 }

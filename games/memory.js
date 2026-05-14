@@ -73,16 +73,19 @@ function renderLevelSelect() {
   LEVEL_ORDER.forEach(level => {
     const unlocked = isLevelUnlocked(level);
     const score = levelScores[level] || 0;
+    const completed = score > 0;
     const btn = document.createElement('button');
-    btn.className = `level-btn ${unlocked ? '' : 'locked'} ${score > 0 ? 'completed' : ''}`;
+    btn.className = `level-btn ${!unlocked ? 'locked' : completed ? 'completed' : ''}`;
     btn.innerHTML = `
       <span class="level-name">${LEVEL_LABELS[level]}</span>
       <span class="level-info">${levels[level].cols}×${levels[level].rows} · ${levels[level].totalPairs} pairs</span>
-      <span class="level-score">${score > 0 ? '✓ ' + score + ' pts' : unlocked ? 'PLAY →' : '🔒 LOCKED'}</span>
+      <span class="level-score">${completed ? '✓ ' + score + ' pts' : unlocked ? 'PLAY →' : '🔒 LOCKED'}</span>
     `;
-    if (unlocked) {
+    // Only allow playing if unlocked AND not yet completed
+    if (unlocked && !completed) {
       btn.addEventListener('click', () => startLevel(level));
     }
+    if (completed) btn.style.cursor = 'default';
     container.appendChild(btn);
   });
 }
@@ -195,12 +198,12 @@ function flipCard(idx, show) {
     el.classList.add('flipped');
     // Set card text only when flipped — not present in DOM before
     const backEl = el.querySelector('.mem-card-back');
-    if (backEl) backEl.textContent = cards[idx].text;
+    if (backEl) backEl.innerHTML = cards[idx].text;
   } else {
     el.classList.remove('flipped');
     // Clear text when flipped back to prevent inspect
     const backEl = el.querySelector('.mem-card-back');
-    if (backEl) backEl.textContent = '';
+    if (backEl) backEl.innerHTML = '';
   }
 }
 
@@ -240,15 +243,14 @@ async function endGame() {
   document.getElementById('results-section').hidden = false;
   document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
 
-  // Calculate total score across all levels
-  const totalScore = Object.values(levelScores).reduce((a, b) => a + b, 0);
-
   // Cache progress locally
   const cacheKey = `memory_progress_${player.team_name}`;
   localStorage.setItem(cacheKey, JSON.stringify({ levelScores: { ...levelScores } }));
 
+  // Submit only this level's score (not cumulative total)
+  // The Supabase RPC uses GREATEST so it keeps the best score per game
   await submitScore({
-    usn: player.team_name, game: 'memory', score: totalScore,
+    usn: player.team_name, game: 'memory', score: score,
     meta: { level: currentLevel, levelScore: score, pairs: matchedCount, moves, timeTaken: timerSecs, levelScores: { ...levelScores } },
   });
 }

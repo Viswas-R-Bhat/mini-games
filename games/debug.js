@@ -24,6 +24,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     return order[a.difficulty] - order[b.difficulty];
   });
 
+  // ── Check if game was already completed ─────────────────────────────
+  const completedKey = `debug_completed_v2_${player.team_name}`;
+  const completedData = JSON.parse(localStorage.getItem(completedKey) || 'null');
+  if (completedData) {
+    // Game was already finished — show locked results, block replay
+    finished = true;
+    document.getElementById('debug-area').hidden = true;
+    document.getElementById('snippet-list').hidden = true;
+    document.getElementById('results-section').hidden = false;
+    document.getElementById('res-points').textContent = completedData.rawScore;
+    document.getElementById('res-time').textContent = formatTime(completedData.timeTaken);
+    document.getElementById('res-score').textContent = completedData.finalScore;
+    document.getElementById('total-available').textContent = snippets.reduce((s, q) => s + q.points, 0);
+    return; // Don't start timer or allow any interaction
+  }
+
   // ── Restore saved session if it exists ──────────────────────────────
   const sessionKey = `debug_session_${player.team_name}`;
   const saved = JSON.parse(localStorage.getItem(sessionKey) || 'null');
@@ -47,7 +63,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function attachListeners() {
   document.getElementById('submit-fix').addEventListener('click', submitFix);
-  document.getElementById('play-again-btn')?.addEventListener('click', () => location.reload());
+  // Navigate back to games list instead of reloading (which would reset the game)
+  document.getElementById('play-again-btn')?.addEventListener('click', () => {
+    window.location.href = '../games_list.html';
+  });
 }
 
 function renderSnippetList() {
@@ -110,7 +129,7 @@ function showRound(idx) {
 }
 
 function onLineClick(lineIdx) {
-  if (roundPhase !== 'select') return;
+  if (roundPhase !== 'select' && roundPhase !== 'fix') return;
   document.querySelectorAll('.code-line').forEach(el => el.classList.remove('line-selected'));
   selectedLine = lineIdx;
   document.querySelectorAll('.code-line')[lineIdx].classList.add('line-selected');
@@ -227,12 +246,22 @@ async function endGame() {
   finished = true;
   clearInterval(timerInterval);
 
-  // Clear session — game is over, no need to restore on next visit
-  if (player) localStorage.removeItem(`debug_session_${player.team_name}`);
-
   const finalScore = Math.max(0, score - Math.floor(totalTime / 2));
 
+  // Save completion record — prevents replay on refresh
+  if (player) {
+    const completedKey = `debug_completed_v2_${player.team_name}`;
+    localStorage.setItem(completedKey, JSON.stringify({
+      rawScore: score,
+      timeTaken: totalTime,
+      finalScore,
+    }));
+    // Clear the in-progress session
+    localStorage.removeItem(`debug_session_${player.team_name}`);
+  }
+
   document.getElementById('debug-area').hidden = true;
+  document.getElementById('snippet-list').hidden = true;
   document.getElementById('results-section').hidden = false;
   document.getElementById('res-points').textContent = score;
   document.getElementById('res-time').textContent = formatTime(totalTime);

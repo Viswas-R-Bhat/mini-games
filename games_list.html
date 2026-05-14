@@ -88,7 +88,7 @@
 <body>
 <div class="page">
   <nav>
-    <a class="nav-logo" href="../index.html">REAIVIVE</a>
+    <a class="nav-logo" href="index.html">REAIVIVE</a>
     <span class="nav-tag">BMSCE · VarAInce</span>
   </nav>
 
@@ -137,7 +137,7 @@
 
 <script type="module">
   import { supabase } from './lib/supabaseClient.js';
-  import { checkLeaderboardVisible, getGameAttemptCount } from './lib/submitScore.js';
+  import { checkLeaderboardVisible, getGameAttemptCount, initPlayer } from './lib/submitScore.js';
 
   // Game definitions in order — each game requires the previous one to have ≥1 attempt
   const GAMES = [
@@ -155,7 +155,7 @@
     },
     {
       id: 'memory', href: 'pages/memory.html', icon: '🧠', name: 'MEMORY MATCH',
-      desc: '3 levels — GK → Basic CS → Hard CS. Match pairs to unlock the next level.',
+      desc: '3 levels — GK → Basic CS → Pictures. Match pairs to unlock the next level.',
       tags: ['3 Rounds', 'Sequential', 'Pairs'], accent: '#a78bfa',
       requiresGame: 'reaction',
     },
@@ -179,14 +179,14 @@
     },
   ];
 
-  const teamName = localStorage.getItem('team_name');
+  // Enforce login on the games list page
+  const player = await initPlayer();
+  const teamName = player.team_name;
 
-  // Show team bar if logged in
-  if (teamName) {
-    const bar = document.getElementById('team-bar');
-    document.getElementById('tb-name').textContent = teamName;
-    bar.hidden = false;
-  }
+  // Show team bar
+  const bar = document.getElementById('team-bar');
+  document.getElementById('tb-name').textContent = teamName;
+  bar.hidden = false;
 
   document.getElementById('tb-switch')?.addEventListener('click', () => {
     if (confirm('Switch team? Your current team progress is saved.')) {
